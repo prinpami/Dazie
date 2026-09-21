@@ -19,7 +19,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       title: 'Dazie',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      theme: AppTheme.dark,
       initialRoute: '/',
       onGenerateRoute: (settings) {
         late final Widget screen;

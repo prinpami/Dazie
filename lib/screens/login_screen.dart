@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dazie_action_button.dart';
-import '../widgets/dazie_logo.dart';
 import '../widgets/dazie_page.dart';
+import '../widgets/dazie_provider_buttons.dart';
 import '../widgets/dazie_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -44,18 +44,33 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: AppSpacing.lg),
-            const Center(child: DazieLogo(size: 28)),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                IconButton(
+                  tooltip: 'Back',
+                  onPressed: () => Navigator.maybePop(context),
+                  icon: Image.asset('assets/images/BackButton.png', width: 22),
+                ),
+                const Spacer(),
+                Image.asset(
+                  'assets/images/DAZIE.png',
+                  width: 82,
+                  height: 26,
+                  fit: BoxFit.contain,
+                  semanticLabel: 'Dazie',
+                ),
+                const SizedBox(width: 12),
+              ],
+            ),
             const SizedBox(height: AppSpacing.xl),
             Text(
               'Welcome back',
-              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Enter your display name to continue to the demo.',
-              textAlign: TextAlign.center,
+              'Sign in to pick up where your group left off.',
               style: Theme.of(context).textTheme.bodyMedium
                   ?.copyWith(color: DazieColors.mutedText),
             ),
@@ -75,12 +90,14 @@ class _LoginScreenState extends State<LoginScreen> {
             DazieActionButton(label: 'CONTINUE', onPressed: _continueToHome),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'This first version keeps your name for this session only. There is no server sign-in yet.',
+              'This preview uses a display name for this session. It does not connect to an online account.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.labelSmall
                   ?.copyWith(height: 1.4),
             ),
             const SizedBox(height: AppSpacing.lg),
+            const DazieProviderButtons(),
+            const SizedBox(height: AppSpacing.md),
             TextButton(
               onPressed: () =>
                   Navigator.pushReplacementNamed(context, '/register'),

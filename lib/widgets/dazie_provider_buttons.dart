@@ -1,0 +1,46 @@
+import 'package:flutter/material.dart';
+
+import '../theme/app_spacing.dart';
+import '../theme/app_theme.dart';
+
+// These brand buttons are visual placeholders until provider sign-in exists.
+class DazieProviderButtons extends StatelessWidget {
+  const DazieProviderButtons({super.key});
+
+  void _showNotConnected(BuildContext context, String provider) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$provider sign-in is not connected in this demo.'),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text('Or continue with', style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _showNotConnected(context, 'Google'),
+                icon: Image.asset('assets/images/Google.png', width: 20),
+                label: const Text('Google'),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _showNotConnected(context, 'Facebook'),
+                icon: Image.asset('assets/images/Facebook.png', width: 20),
+                label: const Text('Facebook'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
