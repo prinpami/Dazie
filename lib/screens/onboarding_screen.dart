@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dazie_action_button.dart';
-import '../widgets/dazie_logo.dart';
 import '../widgets/dazie_page.dart';
 
 class OnboardingScreen extends StatelessWidget {
@@ -15,23 +14,46 @@ class OnboardingScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: AppSpacing.sm),
-          const Center(child: DazieLogo(size: 30)),
+          const SizedBox(height: AppSpacing.md),
+          Center(
+            child: Image.asset(
+              'assets/images/DAZIE.png',
+              width: 92,
+              height: 28,
+              fit: BoxFit.contain,
+              semanticLabel: 'Dazie',
+            ),
+          ),
           const SizedBox(height: AppSpacing.xl),
-          const _WelcomeIllustration(),
+          Container(
+            height: 224,
+            decoration: BoxDecoration(
+              color: DazieColors.midnightIndigo,
+              borderRadius: BorderRadius.circular(32),
+            ),
+            child: Center(
+              child: Image.asset(
+                'assets/images/Dazie_Logo.png',
+                width: 200,
+                height: 200,
+                fit: BoxFit.contain,
+                semanticLabel: 'Dazie mascot',
+              ),
+            ),
+          ),
           const SizedBox(height: AppSpacing.xl),
           Text(
-            'Stay connected,\neven when offline.',
+            'Stay connected,\neven offline.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall
-                ?.copyWith(fontSize: 29, height: 1.15),
+                ?.copyWith(fontSize: 30, height: 1.15),
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'Chat with your group and find your friends nearby, even when mobile data is weak.',
+            'Bring your group together and find friends nearby, even when the internet is out.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: DazieColors.mutedText, height: 1.45),
+                ?.copyWith(color: DazieColors.mutedText, height: 1.5),
           ),
           const SizedBox(height: AppSpacing.xl),
           DazieActionButton(
@@ -45,83 +67,6 @@ class OnboardingScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
-      ),
-    );
-  }
-}
-
-// A small Flutter illustration stands in for a Figma image asset for now.
-class _WelcomeIllustration extends StatelessWidget {
-  const _WelcomeIllustration();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 208,
-      child: Center(
-        child: SizedBox.square(
-          dimension: 196,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 188,
-                height: 188,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: DazieColors.midnightIndigo.withOpacity(0.12),
-                  ),
-                ),
-              ),
-              Container(
-                width: 138,
-                height: 138,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: DazieColors.midnightIndigo.withOpacity(0.18),
-                  ),
-                ),
-              ),
-              Container(
-                width: 88,
-                height: 88,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: DazieColors.tangerineOrange,
-                ),
-                child: const Icon(
-                  Icons.forum_rounded,
-                  color: DazieColors.darkIndigo,
-                  size: 38,
-                ),
-              ),
-              const Positioned(
-                top: 20,
-                right: 20,
-                child: CircleAvatar(
-                  radius: 21,
-                  backgroundColor: DazieColors.electricViolet,
-                  child: Icon(Icons.person, color: DazieColors.white),
-                ),
-              ),
-              const Positioned(
-                bottom: 18,
-                left: 16,
-                child: CircleAvatar(
-                  radius: 18,
-                  backgroundColor: DazieColors.midnightIndigo,
-                  child: Icon(
-                    Icons.near_me,
-                    color: DazieColors.white,
-                    size: 19,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

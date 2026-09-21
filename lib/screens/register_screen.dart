@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/dazie_action_button.dart';
-import '../widgets/dazie_logo.dart';
 import '../widgets/dazie_page.dart';
+import '../widgets/dazie_provider_buttons.dart';
 import '../widgets/dazie_text_field.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -44,18 +44,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: AppSpacing.lg),
-            const Center(child: DazieLogo(size: 28)),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                IconButton(
+                  tooltip: 'Back',
+                  onPressed: () => Navigator.maybePop(context),
+                  icon: Image.asset('assets/images/BackButton.png', width: 22),
+                ),
+                const Spacer(),
+                Image.asset(
+                  'assets/images/DAZIE.png',
+                  width: 82,
+                  height: 26,
+                  fit: BoxFit.contain,
+                  semanticLabel: 'Dazie',
+                ),
+                const SizedBox(width: 12),
+              ],
+            ),
             const SizedBox(height: AppSpacing.xl),
             Text(
               'Create your profile',
-              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Choose the name your friends will see in Dazie.',
-              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium
                   ?.copyWith(color: DazieColors.mutedText),
             ),
@@ -81,12 +96,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'This draft keeps your name for the current session. Local storage will be added later.',
+              'This preview keeps your name for the current session. Your profile is not saved yet.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.labelSmall
                   ?.copyWith(height: 1.4),
             ),
             const SizedBox(height: AppSpacing.lg),
+            const DazieProviderButtons(),
+            const SizedBox(height: AppSpacing.md),
             TextButton(
               onPressed: () =>
                   Navigator.pushReplacementNamed(context, '/login'),
