@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
-import '../widgets/dazie_logo.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.displayName});
@@ -16,8 +15,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   String _searchText = '';
+  int _selectedTab = 0;
 
-  // These sample rows make the home screen easy to show before local storage exists.
+  // These sample conversations let us present the layout before chat storage exists.
   static const _conversations = <_ConversationPreview>[
     _ConversationPreview('Taylor Morgan', 'You sent a photo.', '7:38 pm'),
     _ConversationPreview(
@@ -73,107 +73,275 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  void _showPreviewMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
   @override
   Widget build(BuildContext context) {
-    final conversations = _visibleConversations;
-
     return Scaffold(
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: SizedBox(
-                height: 48,
-                child: Row(
-                  children: [
-                    const DazieLogo(size: 22),
-                    const Spacer(),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 135),
-                      child: Text(
-                        widget.displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    CircleAvatar(
-                      radius: 15,
-                      backgroundColor: DazieColors.tangerineOrange,
-                      child: Text(
-                        widget.displayName.trim().isEmpty
-                            ? '?'
-                            : widget.displayName.trim()[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: DazieColors.darkIndigo,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                14,
-                AppSpacing.xs,
-                14,
-                AppSpacing.sm,
-              ),
-              child: SizedBox(
-                height: 36,
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) => setState(() => _searchText = value),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: 'Search Friends or Group Chat',
-                    hintStyle: const TextStyle(
-                      color: DazieColors.white,
-                      fontSize: 12,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: DazieColors.white,
-                      size: 17,
-                    ),
-                    prefixIconConstraints: const BoxConstraints(
-                      minWidth: 35,
-                      minHeight: 34,
-                    ),
-                    filled: true,
-                    fillColor: DazieColors.searchPurple,
-                    contentPadding: EdgeInsets.zero,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  style: const TextStyle(
-                    color: DazieColors.white,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
+            _buildTopBar(),
             Expanded(
-              child: conversations.isEmpty
-                  ? Center(
-                      child: Text(
-                        'No conversations found',
-                        style: Theme.of(context).textTheme.bodySmall,
+              child: _selectedTab == 0 ? _buildMessages() : _buildNearby(),
+            ),
+            NavigationBar(
+              selectedIndex: _selectedTab,
+              onDestinationSelected: (index) {
+                setState(() => _selectedTab = index);
+              },
+              destinations: [
+                const NavigationDestination(
+                  icon: Icon(Icons.chat_bubble_outline_rounded),
+                  selectedIcon: Icon(Icons.chat_bubble_rounded),
+                  label: 'Chats',
+                ),
+                NavigationDestination(
+                  icon: Image.asset(
+                    'assets/images/Discovery.png',
+                    width: 22,
+                    height: 22,
+                    semanticLabel: 'Nearby discovery',
+                  ),
+                  selectedIcon: Image.asset(
+                    'assets/images/RadarButton.png',
+                    width: 22,
+                    height: 22,
+                    semanticLabel: 'Nearby discovery selected',
+                  ),
+                  label: 'Nearby',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          Image.asset(
+            'assets/images/DAZIE.png',
+            width: 78,
+            height: 26,
+            fit: BoxFit.contain,
+            semanticLabel: 'Dazie',
+          ),
+          const Spacer(),
+          PopupMenuButton<String>(
+            tooltip: 'Profile options',
+            onSelected: (value) {
+              if (value == 'signout') {
+                Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'signout', child: Text('Sign out')),
+            ],
+            child: Row(
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 108),
+                  child: Text(
+                    widget.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Image.asset(
+                  'assets/images/Dropdown.png',
+                  width: 16,
+                  height: 16,
+                  semanticLabel: 'Show profile options',
+                ),
+              ],
+            ),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'More options',
+            onSelected: (_) =>
+                _showPreviewMessage('More settings will be added later.'),
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'settings', child: Text('Settings')),
+              PopupMenuItem(value: 'help', child: Text('Help')),
+            ],
+            icon: Image.asset(
+              'assets/images/HamburgerMenu.png',
+              width: 22,
+              height: 22,
+              semanticLabel: 'More options',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessages() {
+    final conversations = _visibleConversations;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Your chats',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Create a chat',
+                onPressed: () => _showPreviewMessage(
+                  'Creating a chat will be added in a later checkpoint.',
+                ),
+                icon: Image.asset(
+                  'assets/images/Create.png',
+                  width: 22,
+                  height: 22,
+                  semanticLabel: 'Create a chat',
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            0,
+            AppSpacing.md,
+            AppSpacing.sm,
+          ),
+          child: SizedBox(
+            height: 42,
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) => setState(() => _searchText = value),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: 'Search friends or group chats',
+                prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                filled: true,
+                fillColor: DazieColors.searchPurple,
+                contentPadding: EdgeInsets.zero,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              style: const TextStyle(color: DazieColors.white),
+            ),
+          ),
+        ),
+        Expanded(
+          child: conversations.isEmpty
+              ? Center(
+                  child: Text(
+                    'No conversations found',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.only(
+                    left: AppSpacing.sm,
+                    right: AppSpacing.sm,
+                    bottom: AppSpacing.md,
+                  ),
+                  itemCount: conversations.length,
+                  separatorBuilder: (context, index) => const Divider(
+                    height: 1,
+                    indent: 68,
+                    endIndent: AppSpacing.md,
+                    color: DazieColors.line,
+                  ),
+                  itemBuilder: (context, index) {
+                    final conversation = conversations[index];
+                    return _ConversationTile(
+                      conversation: conversation,
+                      onTap: () => _showPreviewMessage(
+                        'The chat screen is planned for a later checkpoint.',
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                      itemCount: conversations.length,
-                      itemBuilder: (context, index) =>
-                          _ConversationTile(conversation: conversations[index]),
-                    ),
+                      onCall: () => _showPreviewMessage(
+                        'Voice calling is not connected yet.',
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNearby() {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 168,
+              height: 168,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: DazieColors.midnightIndigo,
+              ),
+              child: Center(
+                child: Image.asset(
+                  'assets/images/RadarButton.png',
+                  width: 76,
+                  height: 76,
+                  semanticLabel: 'Dazie nearby radar',
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              'Find your friends nearby',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Dazie is being designed to help your group stay together when the internet is unavailable. Nearby discovery is a future checkpoint.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: DazieColors.mutedText, height: 1.5),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            FilledButton.icon(
+              onPressed: () => _showPreviewMessage(
+                'Nearby discovery is a visual preview for now.',
+              ),
+              icon: Image.asset(
+                'assets/images/RadarButton.png',
+                width: 18,
+                height: 18,
+              ),
+              label: const Text('PREVIEW RADAR'),
             ),
           ],
         ),
@@ -197,9 +365,22 @@ class _ConversationPreview {
 }
 
 class _ConversationTile extends StatelessWidget {
-  const _ConversationTile({required this.conversation});
+  const _ConversationTile({
+    required this.conversation,
+    required this.onTap,
+    required this.onCall,
+  });
 
   final _ConversationPreview conversation;
+  final VoidCallback onTap;
+  final VoidCallback onCall;
+
+  String get _initials => conversation.name
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .take(2)
+      .map((part) => part[0].toUpperCase())
+      .join();
 
   @override
   Widget build(BuildContext context) {
@@ -208,56 +389,78 @@ class _ConversationTile extends StatelessWidget {
       fontWeight: conversation.isUnread ? FontWeight.w800 : FontWeight.w600,
     );
 
-    return SizedBox(
-      height: 68,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        child: Row(
-          children: [
-            const CircleAvatar(
-              radius: 22,
-              backgroundColor: DazieColors.tangerineOrange,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    conversation.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: titleStyle,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        height: 76,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: DazieColors.midnightIndigo,
+                child: Text(
+                  _initials,
+                  style: const TextStyle(
+                    color: DazieColors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
                   ),
-                  const SizedBox(height: 1),
-                  Text(
-                    conversation.preview,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: DazieColors.mutedText,
-                      fontSize: 12,
-                      fontWeight: conversation.isUnread
-                          ? FontWeight.w700
-                          : FontWeight.w400,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      conversation.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: titleStyle,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      conversation.preview,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: DazieColors.mutedText,
+                        fontSize: 12,
+                        fontWeight: conversation.isUnread
+                            ? FontWeight.w700
+                            : FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            SizedBox(
-              width: 46,
-              child: Text(
-                conversation.time,
-                textAlign: TextAlign.end,
-                maxLines: 1,
-                style: Theme.of(context).textTheme.labelSmall
-                    ?.copyWith(fontSize: 10),
+              const SizedBox(width: AppSpacing.xs),
+              SizedBox(
+                width: 48,
+                child: Text(
+                  conversation.time,
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.labelSmall
+                      ?.copyWith(fontSize: 10),
+                ),
               ),
-            ),
-          ],
+              IconButton(
+                tooltip: 'Call ${conversation.name}',
+                onPressed: onCall,
+                icon: Image.asset(
+                  'assets/images/PhoneCall.png',
+                  width: 16,
+                  height: 16,
+                  semanticLabel: 'Call',
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
