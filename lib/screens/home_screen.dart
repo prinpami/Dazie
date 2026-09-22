@@ -140,85 +140,55 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Column(
       children: [
+        const SizedBox(height: 23),
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.sm,
-            AppSpacing.sm,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Your chats',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-              ),
-              IconButton(
-                tooltip: 'Create a chat',
-                onPressed: () => _showPreviewMessage(
-                  'Creating a chat will be added in a later checkpoint.',
-                ),
-                icon: Image.asset(
-                  'assets/images/Create.png',
-                  width: 22,
-                  height: 22,
-                  semanticLabel: 'Create a chat',
-                ),
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            0,
-            AppSpacing.md,
-            AppSpacing.sm,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: SizedBox(
-            height: 42,
+            height: 28,
             child: TextField(
               controller: _searchController,
               onChanged: (value) => setState(() => _searchText = value),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Search friends or group chats',
-                prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                hintText: 'Search Friends or Group Chat',
+                hintStyle: const TextStyle(
+                  color: Color(0xFFC7C5DD),
+                  fontSize: 12,
+                ),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: Color(0xFFD6D4E6),
+                  size: 15,
+                ),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 28,
+                ),
                 filled: true,
                 fillColor: DazieColors.searchPurple,
                 contentPadding: EdgeInsets.zero,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(18),
                   borderSide: BorderSide.none,
                 ),
               ),
-              style: const TextStyle(color: DazieColors.white),
+              style: const TextStyle(color: DazieColors.white, fontSize: 12),
             ),
           ),
         ),
+        const SizedBox(height: 18),
         Expanded(
           child: conversations.isEmpty
-              ? Center(
+              ? const Center(
                   child: Text(
                     'No conversations found',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: TextStyle(color: DazieColors.mutedText),
                   ),
                 )
-              : ListView.separated(
-                  padding: const EdgeInsets.only(
-                    left: AppSpacing.sm,
-                    right: AppSpacing.sm,
-                    bottom: AppSpacing.md,
-                  ),
+              : ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 12),
                   itemCount: conversations.length,
-                  separatorBuilder: (context, index) => const Divider(
-                    height: 1,
-                    indent: 68,
-                    endIndent: AppSpacing.md,
-                    color: DazieColors.line,
-                  ),
+                  itemExtent: 73,
                   itemBuilder: (context, index) {
                     final conversation = conversations[index];
                     return _ConversationTile(
@@ -298,7 +268,7 @@ class _ConversationTile extends StatelessWidget {
       child: SizedBox(
         height: 73,
         child: Padding(
-          padding: const EdgeInsets.only(left: 9, right: 4),
+          padding: const EdgeInsets.only(left: 25, right: 20),
           child: Row(
             children: [
               const CircleAvatar(
