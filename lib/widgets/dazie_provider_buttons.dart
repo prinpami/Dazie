@@ -18,8 +18,21 @@ class DazieProviderButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text('Or continue with', style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            const Expanded(
+              child: Divider(color: Color(0xFFD8D8D8), thickness: 2),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+              child: Text('OR', style: Theme.of(context).textTheme.bodySmall),
+            ),
+            const Expanded(
+              child: Divider(color: Color(0xFFD8D8D8), thickness: 2),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
         Row(
           children: [
             Expanded(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_spacing.dart';
+import '../theme/app_theme.dart';
 
 // I use this layout on welcome and profile screens to keep them centered on web.
 class DaziePage extends StatelessWidget {
@@ -10,15 +10,26 @@ class DaziePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: child,
-            ),
+    return Theme(
+      data: AppTheme.light,
+      child: Scaffold(
+        backgroundColor: DazieColors.white,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final contentWidth = constraints.maxWidth < 344
+                  ? constraints.maxWidth - 40
+                  : 304.0;
+
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(
+                    child: SizedBox(width: contentWidth, child: child),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
