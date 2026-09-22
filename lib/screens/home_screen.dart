@@ -15,7 +15,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   String _searchText = '';
-  int _selectedTab = 0;
 
   // These sample conversations let us present the layout before chat storage exists.
   static const _conversations = <_ConversationPreview>[
@@ -82,42 +81,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: DazieColors.darkIndigo,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             _buildTopBar(),
-            Expanded(
-              child: _selectedTab == 0 ? _buildMessages() : _buildNearby(),
-            ),
-            NavigationBar(
-              selectedIndex: _selectedTab,
-              onDestinationSelected: (index) {
-                setState(() => _selectedTab = index);
-              },
-              destinations: [
-                const NavigationDestination(
-                  icon: Icon(Icons.chat_bubble_outline_rounded),
-                  selectedIcon: Icon(Icons.chat_bubble_rounded),
-                  label: 'Chats',
-                ),
-                NavigationDestination(
-                  icon: Image.asset(
-                    'assets/images/Discovery.png',
-                    width: 22,
-                    height: 22,
-                    semanticLabel: 'Nearby discovery',
-                  ),
-                  selectedIcon: Image.asset(
-                    'assets/images/RadarButton.png',
-                    width: 22,
-                    height: 22,
-                    semanticLabel: 'Nearby discovery selected',
-                  ),
-                  label: 'Nearby',
-                ),
-              ],
-            ),
+            Expanded(child: _buildMessages()),
           ],
         ),
       ),
@@ -289,60 +259,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
         ),
       ],
-    );
-  }
-
-  Widget _buildNearby() {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 168,
-              height: 168,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: DazieColors.midnightIndigo,
-              ),
-              child: Center(
-                child: Image.asset(
-                  'assets/images/RadarButton.png',
-                  width: 76,
-                  height: 76,
-                  semanticLabel: 'Dazie nearby radar',
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              'Find your friends nearby',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Dazie is being designed to help your group stay together when the internet is unavailable. Nearby discovery is a future checkpoint.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: DazieColors.mutedText, height: 1.5),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            FilledButton.icon(
-              onPressed: () => _showPreviewMessage(
-                'Nearby discovery is a visual preview for now.',
-              ),
-              icon: Image.asset(
-                'assets/images/RadarButton.png',
-                width: 18,
-                height: 18,
-              ),
-              label: const Text('PREVIEW RADAR'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
