@@ -15,7 +15,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   String _searchText = '';
-  int _selectedTab = 0;
 
   // These sample conversations let us present the layout before chat storage exists.
   static const _conversations = <_ConversationPreview>[
@@ -79,45 +78,21 @@ class _HomeScreenState extends State<HomeScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  void _openSettings() {
+    Navigator.pushNamed(context, '/settings', arguments: widget.displayName);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: DazieColors.darkIndigo,
       body: SafeArea(
+        top: false,
         bottom: false,
         child: Column(
           children: [
             _buildTopBar(),
-            Expanded(
-              child: _selectedTab == 0 ? _buildMessages() : _buildNearby(),
-            ),
-            NavigationBar(
-              selectedIndex: _selectedTab,
-              onDestinationSelected: (index) {
-                setState(() => _selectedTab = index);
-              },
-              destinations: [
-                const NavigationDestination(
-                  icon: Icon(Icons.chat_bubble_outline_rounded),
-                  selectedIcon: Icon(Icons.chat_bubble_rounded),
-                  label: 'Chats',
-                ),
-                NavigationDestination(
-                  icon: Image.asset(
-                    'assets/images/Discovery.png',
-                    width: 22,
-                    height: 22,
-                    semanticLabel: 'Nearby discovery',
-                  ),
-                  selectedIcon: Image.asset(
-                    'assets/images/RadarButton.png',
-                    width: 22,
-                    height: 22,
-                    semanticLabel: 'Nearby discovery selected',
-                  ),
-                  label: 'Nearby',
-                ),
-              ],
-            ),
+            Expanded(child: _buildMessages()),
           ],
         ),
       ),
@@ -126,69 +101,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTopBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.sm,
-        AppSpacing.xs,
-      ),
-      child: Row(
-        children: [
-          Image.asset(
-            'assets/images/DAZIE.png',
-            width: 78,
-            height: 26,
-            fit: BoxFit.contain,
-            semanticLabel: 'Dazie',
-          ),
-          const Spacer(),
-          PopupMenuButton<String>(
-            tooltip: 'Profile options',
-            onSelected: (value) {
-              if (value == 'signout') {
-                Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
-              }
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'signout', child: Text('Sign out')),
-            ],
-            child: Row(
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 108),
-                  child: Text(
-                    widget.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Image.asset(
-                  'assets/images/Dropdown.png',
-                  width: 16,
-                  height: 16,
-                  semanticLabel: 'Show profile options',
-                ),
-              ],
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: SizedBox(
+        height: 22,
+        child: Row(
+          children: [
+            Image.asset(
+              'assets/images/DAZIE.png',
+              width: 76,
+              height: 20,
+              fit: BoxFit.contain,
+              semanticLabel: 'Dazie',
             ),
-          ),
-          PopupMenuButton<String>(
-            tooltip: 'More options',
-            onSelected: (_) =>
-                _showPreviewMessage('More settings will be added later.'),
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'settings', child: Text('Settings')),
-              PopupMenuItem(value: 'help', child: Text('Help')),
-            ],
-            icon: Image.asset(
-              'assets/images/HamburgerMenu.png',
+            const Spacer(),
+            _ImageButton(
+              asset: 'assets/images/Create.png',
+              label: 'Create a chat',
+              width: 18,
+              onPressed: () => _showPreviewMessage(
+                'Creating a chat will be added in a later checkpoint.',
+              ),
+            ),
+            const SizedBox(width: 22),
+            _ImageButton(
+              asset: 'assets/images/HamburgerMenu.png',
+              label: 'Open settings',
               width: 22,
-              height: 22,
-              semanticLabel: 'More options',
+              onPressed: _openSettings,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -284,9 +226,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => _showPreviewMessage(
                         'The chat screen is planned for a later checkpoint.',
                       ),
-                      onCall: () => _showPreviewMessage(
-                        'Voice calling is not connected yet.',
-                      ),
                     );
                   },
                 ),
@@ -294,56 +233,32 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+}
 
-  Widget _buildNearby() {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 168,
-              height: 168,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: DazieColors.midnightIndigo,
-              ),
-              child: Center(
-                child: Image.asset(
-                  'assets/images/RadarButton.png',
-                  width: 76,
-                  height: 76,
-                  semanticLabel: 'Dazie nearby radar',
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              'Find your friends nearby',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Dazie is being designed to help your group stay together when the internet is unavailable. Nearby discovery is a future checkpoint.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: DazieColors.mutedText, height: 1.5),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            FilledButton.icon(
-              onPressed: () => _showPreviewMessage(
-                'Nearby discovery is a visual preview for now.',
-              ),
-              icon: Image.asset(
-                'assets/images/RadarButton.png',
-                width: 18,
-                height: 18,
-              ),
-              label: const Text('PREVIEW RADAR'),
-            ),
-          ],
+class _ImageButton extends StatelessWidget {
+  const _ImageButton({
+    required this.asset,
+    required this.label,
+    required this.width,
+    required this.onPressed,
+  });
+
+  final String asset;
+  final String label;
+  final double width;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: InkWell(
+        onTap: onPressed,
+        child: SizedBox(
+          width: width,
+          height: 22,
+          child: Image.asset(asset, fit: BoxFit.contain),
         ),
       ),
     );
@@ -365,27 +280,15 @@ class _ConversationPreview {
 }
 
 class _ConversationTile extends StatelessWidget {
-  const _ConversationTile({
-    required this.conversation,
-    required this.onTap,
-    required this.onCall,
-  });
+  const _ConversationTile({required this.conversation, required this.onTap});
 
   final _ConversationPreview conversation;
   final VoidCallback onTap;
-  final VoidCallback onCall;
-
-  String get _initials => conversation.name
-      .split(RegExp(r'\s+'))
-      .where((part) => part.isNotEmpty)
-      .take(2)
-      .map((part) => part[0].toUpperCase())
-      .join();
 
   @override
   Widget build(BuildContext context) {
     final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: conversation.isUnread ? FontWeight.w800 : FontWeight.w600,
     );
 
@@ -393,24 +296,16 @@ class _ConversationTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
-        height: 76,
+        height: 73,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          padding: const EdgeInsets.only(left: 9, right: 4),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: DazieColors.midnightIndigo,
-                child: Text(
-                  _initials,
-                  style: const TextStyle(
-                    color: DazieColors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
+              const CircleAvatar(
+                radius: 29,
+                backgroundColor: DazieColors.tangerineOrange,
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -429,7 +324,7 @@ class _ConversationTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: DazieColors.mutedText,
-                        fontSize: 12,
+                        fontSize: 14,
                         fontWeight: conversation.isUnread
                             ? FontWeight.w700
                             : FontWeight.w400,
@@ -438,25 +333,15 @@ class _ConversationTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: AppSpacing.xs),
+              const SizedBox(width: 8),
               SizedBox(
-                width: 48,
+                width: 44,
                 child: Text(
                   conversation.time,
                   textAlign: TextAlign.end,
                   maxLines: 1,
                   style: Theme.of(context).textTheme.labelSmall
-                      ?.copyWith(fontSize: 10),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Call ${conversation.name}',
-                onPressed: onCall,
-                icon: Image.asset(
-                  'assets/images/PhoneCall.png',
-                  width: 16,
-                  height: 16,
-                  semanticLabel: 'Call',
+                      ?.copyWith(fontSize: 12),
                 ),
               ),
             ],
