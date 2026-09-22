@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -29,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _ConversationPreview('Different Friend', 'You sent a photo.', '7:38 pm'),
     _ConversationPreview(
       'Different Different Friend',
-      'DiffDiffriend: bluhh wha',
+      'DiffDiffriend: bruhh wha',
       '7:38 pm',
     ),
     _ConversationPreview(
@@ -86,15 +85,45 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: DazieColors.darkIndigo,
-      body: SafeArea(
-        top: false,
-        bottom: false,
-        child: Column(
-          children: [
-            _buildTopBar(),
-            Expanded(child: _buildMessages()),
-          ],
-        ),
+      body: Stack(
+        children: [
+          SafeArea(
+            top: false,
+            bottom: false,
+            child: Column(
+              children: [
+                _buildTopBar(),
+                Expanded(child: _buildMessages()),
+              ],
+            ),
+          ),
+          Positioned(
+            right: 24,
+            bottom: 31,
+            child: Material(
+              color: DazieColors.electricViolet,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => _showPreviewMessage(
+                  'Nearby discovery will be added in a later checkpoint.',
+                ),
+                child: SizedBox(
+                  width: 60,
+                  height: 60,
+                  child: Center(
+                    child: Image.asset(
+                      'assets/images/RadarButton.png',
+                      width: 25,
+                      height: 25,
+                      semanticLabel: 'Discover nearby friends',
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
