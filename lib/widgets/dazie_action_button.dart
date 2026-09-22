@@ -13,6 +13,10 @@ class DazieActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton(onPressed: onPressed, child: Text(label));
+    return SizedBox(
+      height: 48,
+      width: double.infinity,
+      child: FilledButton(onPressed: onPressed, child: Text(label)),
+    );
   }
 }
