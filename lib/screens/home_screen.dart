@@ -78,11 +78,16 @@ class _HomeScreenState extends State<HomeScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  void _openSettings() {
+    Navigator.pushNamed(context, '/settings', arguments: widget.displayName);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: DazieColors.darkIndigo,
       body: SafeArea(
+        top: false,
         bottom: false,
         child: Column(
           children: [
@@ -96,69 +101,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTopBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.sm,
-        AppSpacing.xs,
-      ),
-      child: Row(
-        children: [
-          Image.asset(
-            'assets/images/DAZIE.png',
-            width: 78,
-            height: 26,
-            fit: BoxFit.contain,
-            semanticLabel: 'Dazie',
-          ),
-          const Spacer(),
-          PopupMenuButton<String>(
-            tooltip: 'Profile options',
-            onSelected: (value) {
-              if (value == 'signout') {
-                Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
-              }
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'signout', child: Text('Sign out')),
-            ],
-            child: Row(
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 108),
-                  child: Text(
-                    widget.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Image.asset(
-                  'assets/images/Dropdown.png',
-                  width: 16,
-                  height: 16,
-                  semanticLabel: 'Show profile options',
-                ),
-              ],
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: SizedBox(
+        height: 22,
+        child: Row(
+          children: [
+            Image.asset(
+              'assets/images/DAZIE.png',
+              width: 76,
+              height: 20,
+              fit: BoxFit.contain,
+              semanticLabel: 'Dazie',
             ),
-          ),
-          PopupMenuButton<String>(
-            tooltip: 'More options',
-            onSelected: (_) =>
-                _showPreviewMessage('More settings will be added later.'),
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'settings', child: Text('Settings')),
-              PopupMenuItem(value: 'help', child: Text('Help')),
-            ],
-            icon: Image.asset(
-              'assets/images/HamburgerMenu.png',
+            const Spacer(),
+            _ImageButton(
+              asset: 'assets/images/Create.png',
+              label: 'Create a chat',
+              width: 18,
+              onPressed: () => _showPreviewMessage(
+                'Creating a chat will be added in a later checkpoint.',
+              ),
+            ),
+            const SizedBox(width: 22),
+            _ImageButton(
+              asset: 'assets/images/HamburgerMenu.png',
+              label: 'Open settings',
               width: 22,
-              height: 22,
-              semanticLabel: 'More options',
+              onPressed: _openSettings,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -259,6 +231,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
         ),
       ],
+    );
+  }
+}
+
+class _ImageButton extends StatelessWidget {
+  const _ImageButton({
+    required this.asset,
+    required this.label,
+    required this.width,
+    required this.onPressed,
+  });
+
+  final String asset;
+  final String label;
+  final double width;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: InkWell(
+        onTap: onPressed,
+        child: SizedBox(
+          width: width,
+          height: 22,
+          child: Image.asset(asset, fit: BoxFit.contain),
+        ),
+      ),
     );
   }
 }
