@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_spacing.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dazie_action_button.dart';
 import '../widgets/dazie_page.dart';
@@ -16,23 +15,31 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _identityController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _identityController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  void _continueToHome() {
+  void _logIn() {
     if (_formKey.currentState?.validate() != true) return;
 
-    // This is only a local preview. It does not check an online account.
+    // The mockup flow uses the entered identity as a temporary display name.
     Navigator.pushNamedAndRemoveUntil(
       context,
       '/home',
       (route) => false,
-      arguments: _nameController.text.trim(),
+      arguments: _identityController.text.trim(),
+    );
+  }
+
+  void _forgotPassword() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Password recovery is not connected yet.')),
     );
   }
 
@@ -42,70 +49,118 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Form(
         key: _formKey,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                IconButton(
-                  tooltip: 'Back',
-                  onPressed: () => Navigator.maybePop(context),
-                  icon: Image.asset('assets/images/BackButton.png', width: 22),
-                ),
-                const Spacer(),
-                Image.asset(
-                  'assets/images/DAZIE.png',
-                  width: 82,
-                  height: 26,
-                  fit: BoxFit.contain,
-                  semanticLabel: 'Dazie',
-                ),
-                const SizedBox(width: 12),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xl),
             Text(
-              'Welcome back',
+              'Log in',
+              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Sign in to pick up where your group left off.',
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: DazieColors.mutedText),
+            const SizedBox(height: 48),
+            SizedBox(
+              height: 47,
+              child: DazieTextField(
+                controller: _identityController,
+                hint: 'Email or Username',
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Enter your email or username.'
+                    : null,
+              ),
             ),
-            const SizedBox(height: AppSpacing.xl),
-            DazieTextField(
-              controller: _nameController,
-              label: 'Display name',
-              hint: 'Your name',
-              textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.done,
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Enter your display name.'
-                  : null,
-              onSubmitted: (_) => _continueToHome(),
+            const SizedBox(height: 11),
+            SizedBox(
+              height: 47,
+              child: DazieTextField(
+                controller: _passwordController,
+                hint: 'Password',
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Enter your password.'
+                    : null,
+                onSubmitted: (_) => _logIn(),
+                suffixIcon: TextButton(
+                  onPressed: _forgotPassword,
+                  style: TextButton.styleFrom(
+                    foregroundColor: DazieColors.fieldText,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  child: const Text('FORGOT?'),
+                ),
+              ),
             ),
-            const SizedBox(height: AppSpacing.md),
-            DazieActionButton(label: 'CONTINUE', onPressed: _continueToHome),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'This preview uses a display name for this session. It does not connect to an online account.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall
-                  ?.copyWith(height: 1.4),
-            ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: 29),
+            DazieActionButton(label: 'LOG IN', onPressed: _logIn),
+            const SizedBox(height: 21),
             const DazieProviderButtons(),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: 31),
+            const _LegalNotice(verb: 'signing in'),
+            const SizedBox(height: 28),
             TextButton(
-              onPressed: () =>
-                  Navigator.pushReplacementNamed(context, '/register'),
-              child: const Text('Create a local profile'),
+              onPressed: () => Navigator.pushNamed(context, '/register'),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text.rich(
+                TextSpan(
+                  style: const TextStyle(
+                    color: DazieColors.violetText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  children: const [
+                    TextSpan(text: "Don't have an account? "),
+                    TextSpan(
+                      text: 'SIGN UP',
+                      style: TextStyle(color: DazieColors.tangerineOrange),
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LegalNotice extends StatelessWidget {
+  const _LegalNotice({required this.verb});
+
+  final String verb;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      TextSpan(
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 14),
+        children: [
+          TextSpan(text: 'By $verb to Dazie, you agree to our '),
+          const TextSpan(
+            text: 'Terms',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
+          const TextSpan(text: ' and '),
+          const TextSpan(
+            text: 'Privacy Policy.',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
+      textAlign: TextAlign.center,
     );
   }
 }
