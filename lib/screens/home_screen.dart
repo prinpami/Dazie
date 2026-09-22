@@ -284,9 +284,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => _showPreviewMessage(
                         'The chat screen is planned for a later checkpoint.',
                       ),
-                      onCall: () => _showPreviewMessage(
-                        'Voice calling is not connected yet.',
-                      ),
                     );
                   },
                 ),
@@ -365,27 +362,15 @@ class _ConversationPreview {
 }
 
 class _ConversationTile extends StatelessWidget {
-  const _ConversationTile({
-    required this.conversation,
-    required this.onTap,
-    required this.onCall,
-  });
+  const _ConversationTile({required this.conversation, required this.onTap});
 
   final _ConversationPreview conversation;
   final VoidCallback onTap;
-  final VoidCallback onCall;
-
-  String get _initials => conversation.name
-      .split(RegExp(r'\s+'))
-      .where((part) => part.isNotEmpty)
-      .take(2)
-      .map((part) => part[0].toUpperCase())
-      .join();
 
   @override
   Widget build(BuildContext context) {
     final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: conversation.isUnread ? FontWeight.w800 : FontWeight.w600,
     );
 
@@ -393,24 +378,16 @@ class _ConversationTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
-        height: 76,
+        height: 73,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          padding: const EdgeInsets.only(left: 9, right: 4),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: DazieColors.midnightIndigo,
-                child: Text(
-                  _initials,
-                  style: const TextStyle(
-                    color: DazieColors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
+              const CircleAvatar(
+                radius: 29,
+                backgroundColor: DazieColors.tangerineOrange,
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -429,7 +406,7 @@ class _ConversationTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: DazieColors.mutedText,
-                        fontSize: 12,
+                        fontSize: 14,
                         fontWeight: conversation.isUnread
                             ? FontWeight.w700
                             : FontWeight.w400,
@@ -438,25 +415,15 @@ class _ConversationTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: AppSpacing.xs),
+              const SizedBox(width: 8),
               SizedBox(
-                width: 48,
+                width: 44,
                 child: Text(
                   conversation.time,
                   textAlign: TextAlign.end,
                   maxLines: 1,
                   style: Theme.of(context).textTheme.labelSmall
-                      ?.copyWith(fontSize: 10),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Call ${conversation.name}',
-                onPressed: onCall,
-                icon: Image.asset(
-                  'assets/images/PhoneCall.png',
-                  width: 16,
-                  height: 16,
-                  semanticLabel: 'Call',
+                      ?.copyWith(fontSize: 12),
                 ),
               ),
             ],
