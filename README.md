@@ -4,9 +4,9 @@ Dazie is an offline-first group communication and direction-finding app for frie
 
 ## Current progress
 
-The first demo flow is implemented: onboarding leads to local profile creation or the returning-user form, and both continue to the searchable home conversation list. The interface now uses the supplied Dazie mascot, wordmark, icons, Fredoka and Nunito Sans fonts, and a dark palette based on the brand guide. The Nearby tab is a visual preview, and the home list uses sample rows.
+The current demo reproduces the supplied welcome, login, signup, home, and settings mockups. Welcome and account screens use the light layouts shown in the images; home and settings use the dark indigo layout. The interface uses the supplied mascot, wordmark, profile image, icons, Fredoka and Nunito Sans fonts.
 
-The login/register screens are local UI only. The display name stays in memory for the current session; there is no account server or local persistence yet. Google and Facebook buttons are visual placeholders and do not authenticate. Chat, nearby discovery, compass navigation, and settings remain later checkpoints. Unfinished placeholder Dart files were removed so the source tree shows the working flow.
+The login/register screens are local UI only. The display name stays in memory for the current session; there is no account server or local persistence yet. Google and Facebook buttons, chat creation, and nearby discovery are visual previews. Conversation rows use sample content. Chat messaging, peer discovery, compass navigation, persistent account settings, and real provider sign-in remain later checkpoints.
 
 ## Planned MVP
 
@@ -28,14 +28,14 @@ docs/
                 Full staged roadmap and current status
 lib/
   main.dart
-  screens/      Onboarding, local login/register, and home
+  screens/      Welcome, login, signup, home, and settings
   theme/        Shared color, typography, and spacing tokens
-  widgets/      Shared buttons, text field, and page layout
+  widgets/      Shared buttons, text field, and account layout
 assets/
   fonts/        Fredoka and Nunito Sans brand fonts
-  images/       Dazie logo and interface icons
+  images/       Dazie logos, settings graphics, and interface icons
 test/
-  app_flow_test.dart  Asset and onboarding-to-home widget tests
+  app_flow_test.dart  Asset, navigation, and 390x844 layout checks
 ```
 
 The `docs/` directory is locally ignored by `.gitignore`, as requested. Remove the `/docs/` ignore rule if the project documents should be included in Git pushes.
@@ -49,7 +49,7 @@ flutter pub get
 flutter run -d chrome
 ```
 
-Run the widget and asset checks with `flutter test`. The demo can also run on an Android target. Profile names and sample conversations are not saved between app sessions.
+Run the widget, asset, and mockup-size checks with `flutter test`. The demo can also run on an Android target. Profile names and sample conversations are not saved between app sessions.
 
 ## Project references
 

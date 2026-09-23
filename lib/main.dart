@@ -4,6 +4,7 @@ import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/settings_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -37,7 +38,12 @@ class MainApp extends StatelessWidget {
             break;
           case '/home':
             screen = HomeScreen(
-              displayName: settings.arguments as String? ?? 'Friend',
+              displayName: settings.arguments as String? ?? 'taylor',
+            );
+            break;
+          case '/settings':
+            screen = SettingsScreen(
+              displayName: settings.arguments as String? ?? 'taylor',
             );
             break;
           default:
