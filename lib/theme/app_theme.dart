@@ -118,13 +118,19 @@ abstract final class AppTheme {
         elevation: 1,
         shadowColor: const Color(0xFFD5D5D5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(
+          fontFamily: 'Nunito Sans',
+          fontWeight: FontWeight.w700,
+        ),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: DazieColors.tangerineOrange,
-        textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(
+          fontFamily: 'Nunito Sans',
+          fontWeight: FontWeight.w700,
+        ),
       ),
     ),
   );
