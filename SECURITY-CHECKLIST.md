@@ -53,9 +53,9 @@ This demo is local-only and has no backend.
 | 21 | No student number, personal email, phone number or home address in the repository or in commit messages | Yes | Replaced personal sample identifiers and rewrote commit author metadata; checked tracked text and commit subjects. |
 | 22 | No classmate's personal data in the repository | Yes | Sample conversation names and messages are fictional placeholders. |
 | 23 | Dependencies come from pub.dev, and `build/` and `.dart_tool/` are gitignored | Yes | `pubspec.lock` lists hosted pub.dev packages; `.gitignore` excludes both generated directories. |
-| 24 | Images, fonts and other assets are mine, licensed, or credited | No | The design assets were supplied for this project, but asset provenance and font license notices are not recorded in the repository yet. |
+| 24 | Images, fonts and other assets are mine, licensed, or credited | Yes | The project owner supplied the brand images; Fredoka and Nunito Sans fonts include their OFL-1.1 license notices in `assets/fonts/`. |
 | 25 | Repository visibility is deliberate, and I checked it after my last push | No | An unauthenticated GitHub lookup returned 404, so visibility was not confirmed; check repository settings after the final push. |
 
 ## Anything I found and fixed
 
-The review found a real-name sample conversation and a personal handle in the source and historical commits, so both were replaced with fictional examples and project-only commit metadata. No service credentials or signing secrets were found; GitHub scanning settings, repository visibility, and asset/font licensing still need an owner review before publication.
+The review found a real-name sample conversation and a personal handle in the source and historical commits, so both were replaced with fictional examples and project-only commit metadata. No service credentials or signing secrets were found; GitHub scanning settings and repository visibility still need an owner review before publication.
