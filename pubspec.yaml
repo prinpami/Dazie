@@ -25,6 +25,10 @@ flutter:
       fonts:
         - asset: assets/fonts/Fredoka-VariableFont_wdth,wght.ttf
           weight: 400
+        - asset: assets/fonts/Fredoka-VariableFont_wdth,wght.ttf
+          weight: 600
+        - asset: assets/fonts/Fredoka-VariableFont_wdth,wght.ttf
+          weight: 700
     - family: Nunito Sans
       fonts:
         - asset: assets/fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf
