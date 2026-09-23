@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dazie/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +19,13 @@ void main() {
       'Nunito Sans',
       'assets/fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf',
     );
+    final manifest = jsonDecode(await rootBundle.loadString('FontManifest.json'))
+        as List<dynamic>;
+    final icons = manifest.cast<Map<String, dynamic>>().firstWhere(
+      (entry) => entry['family'] == 'MaterialIcons',
+    );
+    final iconAsset = (icons['fonts'] as List<dynamic>).first['asset'] as String;
+    await _loadFont('MaterialIcons', iconAsset);
   });
 
   testWidgets('onboarding screenshot', (tester) async {
@@ -61,6 +70,10 @@ Future<void> _openApp(WidgetTester tester) async {
 
   await tester.pumpWidget(
     const RepaintBoundary(key: _captureKey, child: MainApp()),
+  );
+  await tester.pumpAndSettle();
+  await tester.runAsync(
+    () => Future<void>.delayed(const Duration(milliseconds: 250)),
   );
   await tester.pumpAndSettle();
 }
