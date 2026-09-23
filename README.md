@@ -4,7 +4,7 @@
 
 ## My project repository
 
-- Public repository: [Dazie on GitHub](https://github.com/prinpami/Dazie) — verify its visibility before sharing it as a public link.
+- Public repository: [Dazie on GitHub](https://github.com/prinpami/Dazie) 
 - Live app: Not deployed.
 
 ## 1. Overview
