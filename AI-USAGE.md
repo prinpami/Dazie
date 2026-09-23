@@ -84,9 +84,9 @@ looks exactly like what it is.
 
 ### Written by me
 
-- **File:** [Add the source file or files containing code you personally wrote. The Git history records commits under your account but does not identify which code was written by you versus AI.]
-- **Commit:** [Add the GitHub commit link for your own code.]
-- **What it does and why it is built this way:** [Describe your own implementation in your own words, and identify enough of the project to account for at least one fifth of its code.]
+- **File:** `lib/screens/register_screen.dart`, `lib/main.dart`, `lib/theme/app_spacing.dart`, and the shared UI files in `lib/widgets/`: `dazie_action_button.dart`, `dazie_page.dart`, `dazie_provider_buttons.dart`, `dazie_text_field.dart`, `settings_components.dart`, and `settings_profile_header.dart`.
+- **Commit:** [Registration screen](https://github.com/prinpami/Dazie/commit/6582ee1f5258358f5c98e295fc401bda2d0e1263), [app navigation](https://github.com/prinpami/Dazie/commit/ab364f75a5ab59085005c10869062dc98fedf278), [shared onboarding widgets](https://github.com/prinpami/Dazie/commit/056763bb326dfa99753ceb1aad1d9ff90aab87ef), [shared auth controls](https://github.com/prinpami/Dazie/commit/64dc4b10593a0f8afc093a8f1c784150b663f88e), [spacing tokens](https://github.com/prinpami/Dazie/commit/e51945c58836a1777e3b4577a3338d5f0237e02a), [settings rows](https://github.com/prinpami/Dazie/commit/51580b63aa24beaaa7159383b205f48769afb52f), and [settings profile header](https://github.com/prinpami/Dazie/commit/ddfaaa303fa0eaa3d437ba3c12bbddb15c31923d).
+- **What it does and why it is built this way:** I wrote the registration screen and edited the app navigation and shared widgets. The registration form checks the username, email, password length, and password confirmation before taking the user to the sample home screen. `main.dart` connects the app screens. After AI helped me understand how `app_theme.dart` centralizes visual styles, I added `app_spacing.dart` to keep layout gaps reusable. The widgets provide shared buttons, fields, page layout, and settings rows so the screens can reuse the same components. The account flow is local because this prototype does not have an authentication backend. Together, these files are about 32% of the current Dart source by line count.
 
 ### The AI-written part I understand best
 
