@@ -1,11 +1,23 @@
 import 'package:dazie/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _captureKey = ValueKey<String>('screen-capture');
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    await _loadFont(
+      'Fredoka',
+      'assets/fonts/Fredoka-VariableFont_wdth,wght.ttf',
+    );
+    await _loadFont(
+      'Nunito Sans',
+      'assets/fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf',
+    );
+  });
 
   testWidgets('onboarding screenshot', (tester) async {
     await _openApp(tester);
@@ -71,4 +83,9 @@ Future<void> _saveScreen(WidgetTester tester, String name) async {
     find.byKey(_captureKey),
     matchesGoldenFile('screenshots/$name.png'),
   );
+}
+
+Future<void> _loadFont(String family, String assetPath) async {
+  final loader = FontLoader(family)..addFont(rootBundle.load(assetPath));
+  await loader.load();
 }
