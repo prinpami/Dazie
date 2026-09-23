@@ -61,8 +61,8 @@ void main() {
     expect(find.text('Sign up'), findsOneWidget);
 
     final fields = find.byType(TextFormField);
-    await tester.enterText(fields.at(0), 'AdaLovelace');
-    await tester.enterText(fields.at(1), 'ada@example.com');
+    await tester.enterText(fields.at(0), 'sampleuser');
+    await tester.enterText(fields.at(1), 'sampleuser@example.com');
     await tester.enterText(fields.at(2), 'password123');
     await tester.enterText(fields.at(3), 'password123');
     final registerButton = find.text('REGISTER');
@@ -80,7 +80,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Open settings'));
     await tester.pumpAndSettle();
     expect(find.text('Settings'), findsOneWidget);
-    expect(find.text('@adalovelace'), findsOneWidget);
+    expect(find.text('@sampleuser'), findsOneWidget);
   });
 
   testWidgets('welcome and account screens match mockup field sizing', (
