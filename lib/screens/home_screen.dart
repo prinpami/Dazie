@@ -52,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'Jordan: see you at 8',
       '7:38 pm',
     ),
-    _ConversationPreview('Hiking Trip', 'Taylor: ggs ang ng trip', '7:38 pm'),
+    _ConversationPreview('Hiking Trip', 'Taylor: see you at the trail', '7:38 pm'),
   ];
 
   List<_ConversationPreview> get _visibleConversations {
