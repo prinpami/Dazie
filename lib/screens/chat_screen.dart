@@ -59,7 +59,8 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _openCompass() {
-    Navigator.pushNamed(context, '/compass', arguments: 'Jordan');
+    final friendName = _isGroup ? 'Jordan' : widget.conversationTitle;
+    Navigator.pushNamed(context, '/compass', arguments: friendName);
   }
 
   @override
