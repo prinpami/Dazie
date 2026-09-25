@@ -132,4 +132,52 @@ void main() {
     expect(tester.getSize(find.byType(CircleAvatar).first), const Size(58, 58));
     expect(find.byType(NavigationBar), findsNothing);
   });
+
+  testWidgets('nearby demo connects locally and opens chat and compass', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(const MainApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('GET STARTED'));
+    await tester.pumpAndSettle();
+    final fields = find.byType(TextFormField);
+    await tester.enterText(fields.at(0), 'sampleuser');
+    await tester.enterText(fields.at(1), 'sampleuser@example.com');
+    await tester.enterText(fields.at(2), 'password123');
+    await tester.enterText(fields.at(3), 'password123');
+    await tester.tap(find.text('REGISTER'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Discover nearby friends'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Device discovery is not active.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Mia Santos'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('CONNECT'));
+    await tester.pumpAndSettle();
+    expect(find.text('Connected in this demo'), findsOneWidget);
+
+    await tester.tap(find.text('MESSAGE Mia Santos'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Local demo · messages stay on this device'),
+      findsOneWidget,
+    );
+    await tester.enterText(find.byType(TextField), 'See you soon');
+    await tester.tap(find.byTooltip('Send message on this device'));
+    await tester.pumpAndSettle();
+    expect(find.text('See you soon'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Open friend direction preview'));
+    await tester.pumpAndSettle();
+    expect(find.text('Friend direction'), findsOneWidget);
+    expect(find.text('LAST KNOWN · 4 MIN AGO'), findsOneWidget);
+  });
 }
