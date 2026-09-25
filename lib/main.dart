@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'screens/chat_screen.dart';
+import 'screens/compass_screen.dart';
+import 'screens/discovery_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -24,6 +27,8 @@ class MainApp extends StatelessWidget {
       initialRoute: '/',
       onGenerateRoute: (settings) {
         late final Widget screen;
+        final arguments = settings.arguments;
+        final routeValues = arguments is Map ? arguments : const {};
 
         // The home route gets a display name from the local demo form.
         switch (settings.name) {
@@ -44,6 +49,22 @@ class MainApp extends StatelessWidget {
           case '/settings':
             screen = SettingsScreen(
               displayName: settings.arguments as String? ?? 'taylor',
+            );
+            break;
+          case '/chat':
+            screen = ChatScreen(
+              conversationTitle: routeValues['title'] as String? ?? 'Family GC',
+              displayName: routeValues['displayName'] as String? ?? 'taylor',
+            );
+            break;
+          case '/discover':
+            screen = DiscoveryScreen(
+              displayName: settings.arguments as String? ?? 'taylor',
+            );
+            break;
+          case '/compass':
+            screen = CompassScreen(
+              friendName: settings.arguments as String? ?? 'Jordan Lee',
             );
             break;
           default:

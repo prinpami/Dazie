@@ -5,7 +5,9 @@ import '../widgets/discovery_radar.dart';
 import '../widgets/peer_connect_sheet.dart';
 
 class DiscoveryScreen extends StatefulWidget {
-  const DiscoveryScreen({super.key});
+  const DiscoveryScreen({super.key, required this.displayName});
+
+  final String displayName;
 
   @override
   State<DiscoveryScreen> createState() => _DiscoveryScreenState();
@@ -44,7 +46,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   void _openChat() {
     final peer = _connectedPeer;
     if (peer == null) return;
-    Navigator.pushNamed(context, '/chat', arguments: peer);
+    Navigator.pushNamed(
+      context,
+      '/chat',
+      arguments: {'title': peer, 'displayName': widget.displayName},
+    );
   }
 
   @override
