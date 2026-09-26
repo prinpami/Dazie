@@ -47,12 +47,12 @@ class _HomeScreenState extends State<HomeScreen> {
       'Placeholder Friend: hehe',
       '7:38 pm',
     ),
+    _ConversationPreview('Study Group', 'Jordan: see you at 8', '7:38 pm'),
     _ConversationPreview(
-      'Study Group',
-      'Jordan: see you at 8',
+      'Hiking Trip',
+      'Taylor: see you at the trail',
       '7:38 pm',
     ),
-    _ConversationPreview('Hiking Trip', 'Taylor: see you at the trail', '7:38 pm'),
   ];
 
   List<_ConversationPreview> get _visibleConversations {
@@ -71,14 +71,20 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _showPreviewMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
   void _openSettings() {
     Navigator.pushNamed(context, '/settings', arguments: widget.displayName);
+  }
+
+  void _openDiscovery() {
+    Navigator.pushNamed(context, '/discover', arguments: widget.displayName);
+  }
+
+  void _openChat(String title) {
+    Navigator.pushNamed(
+      context,
+      '/chat',
+      arguments: {'title': title, 'displayName': widget.displayName},
+    );
   }
 
   @override
@@ -105,9 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),
-                onTap: () => _showPreviewMessage(
-                  'Nearby discovery will be added in a later checkpoint.',
-                ),
+                onTap: _openDiscovery,
                 child: SizedBox(
                   width: 60,
                   height: 60,
@@ -147,9 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
               asset: 'assets/images/Create.png',
               label: 'Create a chat',
               width: 18,
-              onPressed: () => _showPreviewMessage(
-                'Creating a chat will be added in a later checkpoint.',
-              ),
+              onPressed: _openDiscovery,
             ),
             const SizedBox(width: 22),
             _ImageButton(
@@ -222,9 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     final conversation = conversations[index];
                     return _ConversationTile(
                       conversation: conversation,
-                      onTap: () => _showPreviewMessage(
-                        'The chat screen is planned for a later checkpoint.',
-                      ),
+                      onTap: () => _openChat(conversation.name),
                     );
                   },
                 ),

@@ -57,6 +57,14 @@ looks exactly like what it is.
 - **What I kept, what I changed, and why:** I kept the checklist and clarified that authentication, messaging, nearby discovery, and the compass are not implemented as production services.
 - **Commit:** [https://github.com/prinpami/Dazie/commit/4f30c0694e41ced8ad3c424d76d6b68a46331983](https://github.com/prinpami/Dazie/commit/4f30c0694e41ced8ad3c424d76d6b68a46331983)
 
+### 2026-09-25 - Add the remaining UI previews
+
+- **Tool:** OpenAI Codex
+- **What I asked for:** Help implement the remaining proposal screens as visible UI progress, keep the work on a feature branch, and leave backend and device services for later checkpoints.
+- **What it gave back:** A local chat preview, nearby peer discovery and connect sheet, compass preview, home navigation, widget-flow coverage, screenshot references, and README updates.
+- **What I kept, what I changed, and why:** I kept the screens as demo-only interactions. Chat messages are in memory, nearby peers are fixed sample data, and the compass uses a sample bearing. The UI tells the reader those features do not connect to real devices or services.
+- **Commit history:** These changes are split into small commits on [`feature/ui-screens`](https://github.com/prinpami/Dazie/commits/feature/ui-screens/), leaving `main` unchanged.
+
 ## 2. Where the AI got it wrong
 
 ### Case 1 - Brand font setup

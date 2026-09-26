@@ -19,12 +19,14 @@ void main() {
       'Nunito Sans',
       'assets/fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf',
     );
-    final manifest = jsonDecode(await rootBundle.loadString('FontManifest.json'))
-        as List<dynamic>;
+    final manifest = jsonDecode(
+      await rootBundle.loadString('FontManifest.json'),
+    ) as List<dynamic>;
     final icons = manifest.cast<Map<String, dynamic>>().firstWhere(
       (entry) => entry['family'] == 'MaterialIcons',
     );
-    final iconAsset = (icons['fonts'] as List<dynamic>).first['asset'] as String;
+    final iconAsset =
+        (icons['fonts'] as List<dynamic>).first['asset'] as String;
     await _loadFont('MaterialIcons', iconAsset);
   });
 
@@ -59,6 +61,42 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Open settings'));
     await tester.pumpAndSettle();
     await _saveScreen(tester, 'settings');
+  });
+
+  testWidgets('chat screenshot', (tester) async {
+    await _openApp(tester);
+    await _openHome(tester);
+    await tester.tap(find.text('Taylor Morgan'));
+    await tester.pumpAndSettle();
+    await _saveScreen(tester, 'chat');
+  });
+
+  testWidgets('discovery screenshot', (tester) async {
+    await _openApp(tester);
+    await _openHome(tester);
+    await tester.tap(find.bySemanticsLabel('Discover nearby friends'));
+    await tester.pumpAndSettle();
+    await _saveScreen(tester, 'discovery');
+  });
+
+  testWidgets('peer connection sheet screenshot', (tester) async {
+    await _openApp(tester);
+    await _openHome(tester);
+    await tester.tap(find.bySemanticsLabel('Discover nearby friends'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mia Santos'));
+    await tester.pumpAndSettle();
+    await _saveScreen(tester, 'peer_connect');
+  });
+
+  testWidgets('compass screenshot', (tester) async {
+    await _openApp(tester);
+    await _openHome(tester);
+    await tester.tap(find.text('Taylor Morgan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Open friend direction preview'));
+    await tester.pumpAndSettle();
+    await _saveScreen(tester, 'compass');
   });
 }
 
