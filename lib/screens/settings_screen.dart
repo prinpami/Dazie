@@ -1,13 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../models/app_settings.dart';
+import '../services/app_services.dart';
 import '../theme/app_theme.dart';
 import '../widgets/settings_components.dart';
 import '../widgets/settings_profile_header.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key, required this.displayName});
+  const SettingsScreen({
+    super.key,
+    required this.displayName,
+    required this.services,
+  });
 
   final String displayName;
+  final AppServices services;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -16,6 +25,38 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isActive = true;
   String _appearance = 'System';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final settings = await widget.services.settings.getSettings();
+    if (!mounted) return;
+    setState(() {
+      _isActive = settings.activeStatus;
+      _appearance = settings.appearance;
+    });
+  }
+
+  Future<void> _saveSettings() async {
+    await widget.services.settings.saveSettings(
+      AppSettings(activeStatus: _isActive, appearance: _appearance),
+    );
+  }
+
+  void _toggleActive() {
+    setState(() => _isActive = !_isActive);
+    unawaited(_saveSettings());
+  }
+
+  Future<void> _logOut() async {
+    await widget.services.chatSync.stopNearby();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+  }
 
   String get _username {
     final identity = widget.displayName.split('@').first;
@@ -48,6 +89,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : null,
                 onTap: () {
                   setState(() => _appearance = option);
+                  unawaited(_saveSettings());
                   Navigator.pop(context);
                   if (option != 'Dark') {
                     _showPreviewMessage(
@@ -83,12 +125,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(8),
                   onTap: () => _showPreviewMessage(
-                    'Account details will be available in a later checkpoint.',
+                    'This local profile is saved on this device. Passwords are not stored.',
                   ),
                   child: const SettingRow(
                     iconAsset: 'assets/images/Vector-2.png',
-                    title: 'Accounts Centre',
-                    subtitle: 'Email, Password, Security',
+                    title: 'Local Profile',
+                    subtitle: 'Saved on this device',
                   ),
                 ),
               ),
@@ -105,7 +147,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(8),
                         ),
-                        onTap: () => setState(() => _isActive = !_isActive),
+                        onTap: _toggleActive,
                         child: SettingRow(
                           iconAsset: 'assets/images/Vector.png',
                           title: 'Active Status',
@@ -142,11 +184,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 48,
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/',
-                    (_) => false,
-                  ),
+                  onPressed: _logOut,
                   style: FilledButton.styleFrom(
                     backgroundColor: DazieColors.electricViolet,
                     foregroundColor: DazieColors.white,

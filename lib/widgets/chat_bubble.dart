@@ -13,7 +13,9 @@ class ChatBubble extends StatelessWidget {
     final color = message.isMine
         ? DazieColors.tangerineOrange
         : DazieColors.surface;
-    final textColor = message.isMine ? DazieColors.darkIndigo : DazieColors.white;
+    final textColor = message.isMine
+        ? DazieColors.darkIndigo
+        : DazieColors.white;
 
     return Align(
       alignment: message.isMine ? Alignment.centerRight : Alignment.centerLeft,

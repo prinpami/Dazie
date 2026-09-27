@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
 
@@ -36,6 +37,8 @@ class _ChatComposerState extends State<ChatComposer> {
           Expanded(
             child: TextField(
               controller: _controller,
+              maxLength: 2000,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _send(),
               decoration: InputDecoration(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/chat_message.dart';
+import '../services/app_services.dart';
 import '../theme/app_theme.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/chat_composer.dart';
@@ -8,63 +9,60 @@ import '../widgets/chat_composer.dart';
 class ChatScreen extends StatefulWidget {
   const ChatScreen({
     super.key,
+    required this.groupId,
     required this.conversationTitle,
-    required this.displayName,
+    required this.services,
   });
 
+  final String groupId;
   final String conversationTitle;
-  final String displayName;
+  final AppServices services;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final _messages = <ChatMessage>[
-    const ChatMessage(
-      sender: 'Jordan',
-      text: 'Are we meeting at the trail entrance?',
-      time: '7:35 pm',
-      isMine: false,
-    ),
-    const ChatMessage(
-      sender: 'You',
-      text: 'Yes, I will be there by eight.',
-      time: '7:36 pm',
-      isMine: true,
-    ),
-    const ChatMessage(
-      sender: 'Mia',
-      text: 'I can bring water for everyone.',
-      time: '7:37 pm',
-      isMine: false,
-    ),
-  ];
+  late final Stream<List<ChatMessage>> _messagesStream;
 
-  bool get _isGroup =>
-      widget.conversationTitle.toLowerCase().contains('gc') ||
-      widget.conversationTitle.toLowerCase().contains('group');
+  @override
+  void initState() {
+    super.initState();
+    _messagesStream = widget.services.messages.watchMessages(widget.groupId);
+  }
 
-  void _addLocalMessage(String text) {
-    setState(() {
-      _messages.add(
-        ChatMessage(
-          sender: widget.displayName,
-          text: text,
-          time: 'Now',
-          isMine: true,
+  Future<void> _addMessage(String text) async {
+    final profile = await widget.services.profiles.getCurrentProfile();
+    if (!mounted) return;
+    if (profile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Create a local profile before messaging.'),
         ),
       );
-    });
+      return;
+    }
+    await widget.services.chatSync.sendMessage(
+      groupId: widget.groupId,
+      text: text,
+      profile: profile,
+    );
   }
 
   void _openCompass() {
-    final friendName = _isGroup ? 'Jordan' : widget.conversationTitle;
-    Navigator.pushNamed(context, '/compass', arguments: friendName);
+    Navigator.pushNamed(
+      context,
+      '/compass',
+      arguments: widget.conversationTitle,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final connectionNote = widget.services.nearby.isAvailable
+        ? 'Saved here · queued until group members connect'
+        : 'Saved on this device · Android nearby chat is not available here';
+
     return Scaffold(
       backgroundColor: DazieColors.darkIndigo,
       appBar: AppBar(
@@ -102,9 +100,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  Text(
-                    _isGroup ? '4 members · demo' : 'Conversation preview',
-                    style: const TextStyle(
+                  const Text(
+                    'Offline group chat',
+                    style: TextStyle(
                       color: DazieColors.mutedText,
                       fontSize: 11,
                     ),
@@ -127,30 +125,47 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 7),
+            padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 8),
             color: DazieColors.surface,
-            child: const Text(
-              'Local demo · messages stay on this device',
+            child: Text(
+              connectionNote,
               textAlign: TextAlign.center,
-              style: TextStyle(color: DazieColors.mutedText, fontSize: 11),
+              style: const TextStyle(
+                color: DazieColors.mutedText,
+                fontSize: 11,
+              ),
             ),
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Text(
-              'Today',
+              'Messages are stored on this device',
               style: TextStyle(color: DazieColors.mutedText, fontSize: 11),
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) =>
-                  ChatBubble(message: _messages[index]),
+            child: StreamBuilder<List<ChatMessage>>(
+              stream: _messagesStream,
+              builder: (context, snapshot) {
+                final messages = snapshot.data ?? const <ChatMessage>[];
+                if (messages.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No messages yet. Say hello!',
+                      style: TextStyle(color: DazieColors.mutedText),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) =>
+                      ChatBubble(message: messages[index]),
+                );
+              },
             ),
           ),
-          ChatComposer(onSend: _addLocalMessage),
+          ChatComposer(onSend: _addMessage),
         ],
       ),
     );
