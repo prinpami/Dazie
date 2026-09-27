@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _identityController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -29,13 +30,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _logIn() async {
+    if (_isSubmitting) return;
     if (_formKey.currentState?.validate() != true) return;
+    _isSubmitting = true;
 
     final profile = await widget.services.profiles.findByIdentity(
       _identityController.text,
     );
     if (!mounted) return;
     if (profile == null) {
+      _isSubmitting = false;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(

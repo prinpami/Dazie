@@ -24,6 +24,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isActive = true;
+  bool _isLoggingOut = false;
   String _appearance = 'System';
 
   @override
@@ -53,6 +54,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _logOut() async {
+    if (_isLoggingOut) return;
+    _isLoggingOut = true;
     await widget.services.chatSync.stopNearby();
     if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);

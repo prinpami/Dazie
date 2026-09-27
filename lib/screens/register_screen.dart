@@ -21,6 +21,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -32,7 +33,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
+    if (_isSubmitting) return;
     if (_formKey.currentState?.validate() != true) return;
+    _isSubmitting = true;
 
     final profile = await widget.services.profiles.saveProfile(
       username: _usernameController.text,
