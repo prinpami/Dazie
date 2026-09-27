@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../models/conversation.dart';
+import '../services/app_services.dart';
 import '../theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.displayName});
+  const HomeScreen({
+    super.key,
+    required this.displayName,
+    required this.services,
+  });
 
   final String displayName;
+  final AppServices services;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -14,55 +21,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   String _searchText = '';
+  late final Stream<List<Conversation>> _conversationsStream;
 
-  // These sample conversations let us present the layout before chat storage exists.
-  static const _conversations = <_ConversationPreview>[
-    _ConversationPreview('Taylor Morgan', 'You sent a photo.', '7:38 pm'),
-    _ConversationPreview(
-      'Group Chat Placeholder',
-      '25 new messages',
-      '6:38 pm',
-      isUnread: true,
-    ),
-    _ConversationPreview('Friend', 'Friend: Come here.', '7:38 pm'),
-    _ConversationPreview('Different Friend', 'You sent a photo.', '7:38 pm'),
-    _ConversationPreview(
-      'Different Different Friend',
-      'DiffDiffriend: bruhh wha',
-      '7:38 pm',
-    ),
-    _ConversationPreview(
-      'Somebody I Used To Know',
-      'You: I miss you, balik kana',
-      '7:38 pm',
-    ),
-    _ConversationPreview(
-      'Family GC',
-      '2 new messages',
-      '7:38 pm',
-      isUnread: true,
-    ),
-    _ConversationPreview(
-      'Placeholder Friend',
-      'Placeholder Friend: hehe',
-      '7:38 pm',
-    ),
-    _ConversationPreview(
-      'Study Group',
-      'Jordan: see you at 8',
-      '7:38 pm',
-    ),
-    _ConversationPreview('Hiking Trip', 'Taylor: see you at the trail', '7:38 pm'),
-  ];
-
-  List<_ConversationPreview> get _visibleConversations {
-    final query = _searchText.trim().toLowerCase();
-    if (query.isEmpty) return _conversations;
-    return _conversations
-        .where(
-          (conversation) => conversation.name.toLowerCase().contains(query),
-        )
-        .toList();
+  @override
+  void initState() {
+    super.initState();
+    _conversationsStream = widget.services.conversations.watchConversations();
   }
 
   @override
@@ -71,14 +35,34 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _showPreviewMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
   void _openSettings() {
     Navigator.pushNamed(context, '/settings', arguments: widget.displayName);
+  }
+
+  void _openDiscovery() {
+    Navigator.pushNamed(context, '/discover', arguments: widget.displayName);
+  }
+
+  void _openChat(Conversation conversation) {
+    Navigator.pushNamed(
+      context,
+      '/chat',
+      arguments: {
+        'id': conversation.id,
+        'title': conversation.name,
+        'displayName': widget.displayName,
+      },
+    );
+  }
+
+  List<Conversation> _filterConversations(List<Conversation> conversations) {
+    final query = _searchText.trim().toLowerCase();
+    if (query.isEmpty) return conversations;
+    return conversations
+        .where(
+          (conversation) => conversation.name.toLowerCase().contains(query),
+        )
+        .toList();
   }
 
   @override
@@ -93,7 +77,14 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               children: [
                 _buildTopBar(),
-                Expanded(child: _buildMessages()),
+                Expanded(
+                  child: StreamBuilder<List<Conversation>>(
+                    stream: _conversationsStream,
+                    builder: (context, snapshot) => _buildMessages(
+                      _filterConversations(snapshot.data ?? []),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -105,9 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),
-                onTap: () => _showPreviewMessage(
-                  'Nearby discovery will be added in a later checkpoint.',
-                ),
+                onTap: _openDiscovery,
                 child: SizedBox(
                   width: 60,
                   height: 60,
@@ -147,9 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
               asset: 'assets/images/Create.png',
               label: 'Create a chat',
               width: 18,
-              onPressed: () => _showPreviewMessage(
-                'Creating a chat will be added in a later checkpoint.',
-              ),
+              onPressed: _openDiscovery,
             ),
             const SizedBox(width: 22),
             _ImageButton(
@@ -164,9 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMessages() {
-    final conversations = _visibleConversations;
-
+  Widget _buildMessages(List<Conversation> conversations) {
     return Column(
       children: [
         const SizedBox(height: 23),
@@ -208,10 +193,29 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 18),
         Expanded(
           child: conversations.isEmpty
-              ? const Center(
-                  child: Text(
-                    'No conversations found',
-                    style: TextStyle(color: DazieColors.mutedText),
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(30),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _searchText.isEmpty
+                              ? 'Your conversations will show up here.'
+                              : 'No conversations found',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: DazieColors.mutedText),
+                        ),
+                        if (_searchText.isEmpty) ...[
+                          const SizedBox(height: 12),
+                          FilledButton.icon(
+                            onPressed: _openDiscovery,
+                            icon: const Icon(Icons.radar_rounded),
+                            label: const Text('Host or join a group'),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 )
               : ListView.builder(
@@ -222,9 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     final conversation = conversations[index];
                     return _ConversationTile(
                       conversation: conversation,
-                      onTap: () => _showPreviewMessage(
-                        'The chat screen is planned for a later checkpoint.',
-                      ),
+                      onTap: () => _openChat(conversation),
                     );
                   },
                 ),
@@ -264,32 +266,19 @@ class _ImageButton extends StatelessWidget {
   }
 }
 
-class _ConversationPreview {
-  const _ConversationPreview(
-    this.name,
-    this.preview,
-    this.time, {
-    this.isUnread = false,
-  });
-
-  final String name;
-  final String preview;
-  final String time;
-  final bool isUnread;
-}
-
 class _ConversationTile extends StatelessWidget {
   const _ConversationTile({required this.conversation, required this.onTap});
 
-  final _ConversationPreview conversation;
+  final Conversation conversation;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-      fontSize: 15,
-      fontWeight: conversation.isUnread ? FontWeight.w800 : FontWeight.w600,
-    );
+    final titleStyle = Theme.of(context).textTheme.titleMedium
+        ?.copyWith(fontSize: 15, fontWeight: FontWeight.w700);
+    final preview = conversation.lastMessage.isEmpty
+        ? '${conversation.memberIds.length} members'
+        : conversation.lastMessage;
 
     return InkWell(
       onTap: onTap,
@@ -318,15 +307,12 @@ class _ConversationTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      conversation.preview,
+                      preview,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: DazieColors.mutedText,
                         fontSize: 14,
-                        fontWeight: conversation.isUnread
-                            ? FontWeight.w700
-                            : FontWeight.w400,
                       ),
                     ),
                   ],
@@ -334,9 +320,9 @@ class _ConversationTile extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               SizedBox(
-                width: 44,
+                width: 52,
                 child: Text(
-                  conversation.time,
+                  _timeLabel(conversation.updatedAt),
                   textAlign: TextAlign.end,
                   maxLines: 1,
                   style: Theme.of(context).textTheme.labelSmall
@@ -349,4 +335,13 @@ class _ConversationTile extends StatelessWidget {
       ),
     );
   }
+}
+
+String _timeLabel(String value) {
+  final date = DateTime.tryParse(value)?.toLocal();
+  if (date == null) return '';
+  final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+  final minute = date.minute.toString().padLeft(2, '0');
+  final period = date.hour < 12 ? 'am' : 'pm';
+  return '$hour:$minute $period';
 }
