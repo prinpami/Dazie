@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'services/app_services.dart';
 import 'screens/chat_screen.dart';
 import 'screens/compass_screen.dart';
 import 'screens/discovery_screen.dart';
@@ -10,13 +11,16 @@ import 'screens/register_screen.dart';
 import 'screens/settings_screen.dart';
 import 'theme/app_theme.dart';
 
-void main() {
-  runApp(const MainApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final services = await AppServices.open();
+  runApp(MainApp(services: services));
 }
 
-// I keep the first four routes here so it is easy to see the demo's flow.
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  const MainApp({super.key, required this.services});
+
+  final AppServices services;
 
   @override
   Widget build(BuildContext context) {
@@ -36,30 +40,34 @@ class MainApp extends StatelessWidget {
             screen = const OnboardingScreen();
             break;
           case '/login':
-            screen = const LoginScreen();
+            screen = LoginScreen(services: services);
             break;
           case '/register':
-            screen = const RegisterScreen();
+            screen = RegisterScreen(services: services);
             break;
           case '/home':
             screen = HomeScreen(
               displayName: settings.arguments as String? ?? 'taylor',
+              services: services,
             );
             break;
           case '/settings':
             screen = SettingsScreen(
               displayName: settings.arguments as String? ?? 'taylor',
+              services: services,
             );
             break;
           case '/chat':
             screen = ChatScreen(
+              groupId: routeValues['id'] as String? ?? '',
               conversationTitle: routeValues['title'] as String? ?? 'Family GC',
-              displayName: routeValues['displayName'] as String? ?? 'taylor',
+              services: services,
             );
             break;
           case '/discover':
             screen = DiscoveryScreen(
               displayName: settings.arguments as String? ?? 'taylor',
+              services: services,
             );
             break;
           case '/compass':

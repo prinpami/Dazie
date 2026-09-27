@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/app_services.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dazie_action_button.dart';
 import '../widgets/dazie_page.dart';
@@ -7,7 +8,9 @@ import '../widgets/dazie_provider_buttons.dart';
 import '../widgets/dazie_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, required this.services});
+
+  final AppServices services;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -25,15 +28,29 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _logIn() {
+  Future<void> _logIn() async {
     if (_formKey.currentState?.validate() != true) return;
 
-    // The mockup flow uses the entered identity as a temporary display name.
+    final profile = await widget.services.profiles.findByIdentity(
+      _identityController.text,
+    );
+    if (!mounted) return;
+    if (profile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No local profile found. Create a profile on this device first.',
+          ),
+        ),
+      );
+      return;
+    }
+
     Navigator.pushNamedAndRemoveUntil(
       context,
       '/home',
       (route) => false,
-      arguments: _identityController.text.trim(),
+      arguments: profile.username,
     );
   }
 
@@ -100,6 +117,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 29),
             DazieActionButton(label: 'LOG IN', onPressed: _logIn),
+            const SizedBox(height: 10),
+            Text(
+              'This opens a profile saved on this device. Passwords are not checked or stored.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: 21),
             const DazieProviderButtons(),
             const SizedBox(height: 31),

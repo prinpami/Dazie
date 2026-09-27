@@ -5,9 +5,14 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 class DiscoveryRadar extends StatelessWidget {
-  const DiscoveryRadar({super.key, required this.onPeerTap});
+  const DiscoveryRadar({
+    super.key,
+    required this.onPeerTap,
+    this.peerCount = 0,
+  });
 
   final ValueChanged<int> onPeerTap;
+  final int peerCount;
 
   static const _markers = <Offset>[
     Offset(0.21, 0.37),
@@ -40,7 +45,11 @@ class DiscoveryRadar extends StatelessWidget {
               ),
             ),
           ),
-          for (var index = 0; index < _markers.length; index++)
+          for (
+            var index = 0;
+            index < peerCount && index < _markers.length;
+            index++
+          )
             Positioned(
               left: 280 * _markers[index].dx - 12,
               top: 280 * _markers[index].dy - 12,
