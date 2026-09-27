@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../services/app_services.dart';
 import '../widgets/dazie_action_button.dart';
 import '../widgets/dazie_page.dart';
 import '../widgets/dazie_provider_buttons.dart';
 import '../widgets/dazie_text_field.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  const RegisterScreen({super.key, required this.services});
+
+  final AppServices services;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -28,15 +31,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _register() {
+  Future<void> _register() async {
     if (_formKey.currentState?.validate() != true) return;
 
-    // This early demo only carries the username to the sample home screen.
+    final profile = await widget.services.profiles.saveProfile(
+      username: _usernameController.text,
+      email: _emailController.text,
+    );
+    if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(
       context,
       '/home',
       (route) => false,
-      arguments: _usernameController.text.trim(),
+      arguments: profile.username,
     );
   }
 
@@ -109,6 +116,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             const SizedBox(height: 18),
             DazieActionButton(label: 'REGISTER', onPressed: _register),
+            const SizedBox(height: 10),
+            Text(
+              'This creates a local profile. The password is not saved because there is no online account yet.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: 21),
             const DazieProviderButtons(),
             const SizedBox(height: 31),
