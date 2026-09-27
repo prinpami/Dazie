@@ -28,7 +28,7 @@ There are no GitHub Actions workflow files in this project.
 
 ## Backend and security rules
 
-This demo is local-only and has no backend.
+This demo has no cloud backend. Profiles, conversations, and messages are stored locally; Android Nearby Connections can exchange profile, group, and message packets directly between devices after an explicit connection request is accepted.
 
 | # | Check | Yes / No / N/A | Evidence |
 | --- | --- | --- | --- |
@@ -36,14 +36,14 @@ This demo is local-only and has no backend.
 | 14 | Rules restrict a user to their own documents where that makes sense | N/A | There are no backend user documents or access rules in this prototype. |
 | 15 | If Supabase: Row Level Security is on for every table | N/A | The app does not use Supabase or have database tables. |
 | 16 | Firebase and Google API keys are restricted in the Google Cloud console to the APIs and app they are for | N/A | The app contains no Firebase or Google API key. |
-| 17 | I opened the app signed out and confirmed I could not read or write data I should not | N/A | There is no backend or shared data to read or write; account screens are a local prototype. |
+| 17 | I opened the app signed out and confirmed I could not read or write data I should not | N/A | There is no cloud backend or shared account data; local records and nearby packets are available only through the app flow and an explicitly accepted device connection. |
 | 18 | Seed and sample data is invented, not real people's data | Yes | Visible account and conversation examples use fictional names and synthetic test values. |
 
 ## Input and app surface
 
 | # | Check | Yes / No / N/A | Evidence |
 | --- | --- | --- | --- |
-| 19 | Input is validated before it is written, not only styled as valid in the UI | N/A | Form validators run before demo navigation, but the prototype does not write or transmit form data. |
+| 19 | Input is validated before it is written, not only styled as valid in the UI | Yes | Registration validators run before a profile is saved; nearby message packets are size-limited before transmission. |
 | 20 | Nothing secret is recoverable from the built app, since a shipped binary can be unpacked | Yes | No runtime secrets or service credentials are present to extract from a build. |
 
 ## Repository and privacy
@@ -58,4 +58,4 @@ This demo is local-only and has no backend.
 
 ## Anything I found and fixed
 
-The review found a real-name sample conversation and a personal handle in the source and historical commits, so both were replaced with fictional examples and project-only commit metadata. No service credentials or signing secrets were found; GitHub scanning settings and repository visibility still need an owner review before publication.
+The review found a real-name sample conversation and a personal handle in the source and historical commits, so both were replaced with fictional examples and project-only commit metadata. No service credentials or signing secrets were found. The app now uses direct Android nearby transport, but still has no cloud backend. GitHub scanning settings and repository visibility still need an owner review before publication.
