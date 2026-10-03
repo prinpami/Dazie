@@ -53,3 +53,26 @@ The initial screenshots captures did not load the fonts and images correctly, so
 - Test the screens on the target devices and continue comparing them with the mockups.
 - Check the remaining GitHub security settings before making the repository public.
 - Finish the remaining project roadmap items and prepare final presentation materials.
+
+## Compatibility follow-up: October 3, 2026
+
+### What changed
+
+- Replaced the sample-only Android nearby path with a Google Nearby Connections adapter. It uses `P2P_CLUSTER`, connection-code confirmation, and byte packets; other platforms retain the demo adapter.
+- Added Android permission selection and readiness checks for Nearby/Bluetooth, legacy Location, Google Play services, Bluetooth, and Wi-Fi. The app's Android minimum is API 24; the built APK targets API 36 and compiles against API 37.
+- Added local group and message synchronization, queued delivery, retryable connection states, and deletion tombstones. Sembast uses native storage on mobile/desktop and its web adapter in browsers.
+- Fixed widget-test shutdown waiting on an event queue in Flutter fake async, updated deletion-flow selectors, and added API 23–37 permission and simulated peer-connectivity coverage.
+
+### Codebase map
+
+- `lib/main.dart` wires navigation and shared connection prompts. `AppServices` constructs storage, repositories, the nearby adapter, and `ChatSyncService`.
+- `lib/data/` contains database selection and repositories; `lib/models/` defines local and transmitted records. `lib/services/nearby_service.dart` is the transport contract, with Android and demo implementations. `chat_sync_service.dart` handles hello, group, message, and acknowledgement packets.
+- `lib/screens/` contains onboarding, home, discovery, chat, settings, and compass flows. Accounts remain local, provider sign-in is a placeholder, and compass/location values are demonstration data.
+
+### Checks and remaining compatibility work
+
+- `flutter analyze` completed without issues; `flutter test --concurrency=1` passed all 14 tests.
+- The debug APK, web build, and Linux build completed. The APK reports min SDK 24, target SDK 36, and compile SDK 37. The web build emitted a non-blocking Cupertino icon-font warning; the app has no `CupertinoIcons` references.
+- The September 27 report above records successful testing on two physical Android phones. No phone or emulator was attached during this October 3 compatibility pass, so Android Nearby advertising, discovery, acceptance, and transfer were not retested on hardware.
+- Repeat host/find, code acceptance and rejection, group/history sync, queued delivery after reconnect, and mobile-data-off checks across Android versions and vendors. API 32 and API 33+ permission behavior is covered in automated tests but still needs device checks.
+- Online authentication, provider sign-in, live compass/location, and iOS Nearby transport remain outside the current prototype.

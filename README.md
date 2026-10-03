@@ -144,8 +144,8 @@ The physical-device verification photo below shows Dazie running on two Android 
 - The compass and location display use sample bearing and distance data; live sensors and location sharing are not implemented.
 - Provider sign-in buttons are placeholders.
 - The app has been verified on two connected Android phones, but more device models and Android versions still need testing.
-- Some existing widget tests still need the required `services` fixture argument before the full test suite is green.
-- Next steps are to improve reconnection and conflict handling, add more automated Android integration coverage, and replace demonstration direction data with permission-aware location and compass services.
+- Automated tests cover simulated two-peer sync and permission selection from API 23 through API 37; real Nearby behavior still needs testing across more phone models and Android versions.
+- Next steps are to improve reconnection and conflict handling, add two-device Android integration coverage, and replace demonstration direction data with permission-aware location and compass services.
 
 ## Presentation
 
