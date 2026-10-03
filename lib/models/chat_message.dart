@@ -1,3 +1,4 @@
+// This creates the schema of the messages
 class ChatMessage {
   const ChatMessage({
     required this.id,

@@ -6,6 +6,7 @@ class Conversation {
     required this.createdAt,
     required this.updatedAt,
     this.lastMessage = '',
+    this.ownerId = '',
     this.isGroup = true,
   });
 
@@ -15,11 +16,13 @@ class Conversation {
   final String createdAt;
   final String updatedAt;
   final String lastMessage;
+  final String ownerId;
   final bool isGroup;
 
   Map<String, Object?> toMap() => {
     'id': id,
     'name': name,
+    'ownerId': ownerId,
     'memberIds': memberIds,
     'createdAt': createdAt,
     'updatedAt': updatedAt,
@@ -30,6 +33,9 @@ class Conversation {
   factory Conversation.fromMap(Map<String, Object?> map) => Conversation(
     id: map['id'] as String,
     name: map['name'] as String,
+    ownerId:
+        map['ownerId'] as String? ??
+        ((map['memberIds'] as List?)?.firstOrNull as String? ?? ''),
     memberIds: (map['memberIds'] as List<Object?>? ?? const [])
         .whereType<String>()
         .toList(),

@@ -228,6 +228,15 @@ abstract final class AppTheme {
         ),
       ),
     ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: DazieColors.white,
+        disabledForegroundColor: DazieColors.mutedText.withValues(alpha: 0.45),
+        minimumSize: const Size.fromHeight(48),
+        side: const BorderSide(color: DazieColors.electricViolet),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: DazieColors.tangerineOrange,

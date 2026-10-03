@@ -6,7 +6,7 @@ import '../theme/app_theme.dart';
 class ChatComposer extends StatefulWidget {
   const ChatComposer({super.key, required this.onSend});
 
-  final ValueChanged<String> onSend;
+  final Future<void> Function(String) onSend;
 
   @override
   State<ChatComposer> createState() => _ChatComposerState();
@@ -14,6 +14,7 @@ class ChatComposer extends StatefulWidget {
 
 class _ChatComposerState extends State<ChatComposer> {
   final _controller = TextEditingController();
+  bool _sending = false;
 
   @override
   void dispose() {
@@ -21,11 +22,26 @@ class _ChatComposerState extends State<ChatComposer> {
     super.dispose();
   }
 
-  void _send() {
+  Future<void> _send() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
-    widget.onSend(text);
-    _controller.clear();
+    if (text.isEmpty || _sending) return;
+    setState(() => _sending = true);
+    try {
+      await widget.onSend(text);
+      if (mounted && _controller.text.trim() == text) _controller.clear();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not save your message. Your draft is still here.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   @override
@@ -63,8 +79,8 @@ class _ChatComposerState extends State<ChatComposer> {
             color: DazieColors.tangerineOrange,
             shape: const CircleBorder(),
             child: IconButton(
-              tooltip: 'Send message on this device',
-              onPressed: _send,
+              tooltip: 'Send message',
+              onPressed: _sending ? null : _send,
               icon: const Icon(Icons.arrow_upward_rounded),
               color: DazieColors.darkIndigo,
             ),

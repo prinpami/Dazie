@@ -4,9 +4,10 @@ import '../models/chat_message.dart';
 import '../theme/app_theme.dart';
 
 class ChatBubble extends StatelessWidget {
-  const ChatBubble({super.key, required this.message});
+  const ChatBubble({super.key, required this.message, this.onDelete});
 
   final ChatMessage message;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -58,8 +59,22 @@ class ChatBubble extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 3),
+              if (onDelete != null)
+                PopupMenuButton<String>(
+                  tooltip: 'Message options',
+                  icon: Icon(Icons.more_horiz, color: textColor),
+                  onSelected: (_) => onDelete!(),
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Text('Delete'),
+                    ),
+                  ],
+                ),
               Text(
-                message.time,
+                message.isMine
+                    ? '${message.time} · ${message.deliveryStatus}'
+                    : message.time,
                 style: TextStyle(
                   color: textColor.withValues(alpha: 0.65),
                   fontSize: 10,

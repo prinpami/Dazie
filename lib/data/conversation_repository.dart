@@ -23,12 +23,55 @@ class ConversationRepository {
     final group = Conversation(
       id: makeId(),
       name: cleanName,
+      ownerId: ownerId,
       memberIds: [ownerId],
       createdAt: now,
       updatedAt: now,
     );
     await _groups.record(group.id).put(_database, group.toMap());
     return group;
+  }
+
+  Future<Conversation?> findOwnedGroup(String name, String ownerId) async {
+    final groups = await _groups.find(_database);
+    for (final record in groups) {
+      final group = Conversation.fromMap(record.value);
+      if (group.ownerId == ownerId &&
+          group.name.trim().toLowerCase() == name.trim().toLowerCase()) {
+        return group;
+      }
+    }
+    return null;
+  }
+
+  Future<bool> isDeleted(String id) async => await stringMapStoreFactory
+      .store('deleted_groups')
+      .record(id)
+      .exists(_database);
+
+  Future<void> allowRejoin(String id) async {
+    await stringMapStoreFactory
+        .store('deleted_groups')
+        .record(id)
+        .delete(_database);
+  }
+
+  Future<void> deleteConversation(String id) async {
+    await _database.transaction((txn) async {
+      final messages = stringMapStoreFactory.store('messages');
+      final finder = Finder(filter: Filter.equals('groupId', id));
+      for (final record in await messages.find(txn, finder: finder)) {
+        await stringMapStoreFactory
+            .store('deleted_messages')
+            .record(record.key)
+            .put(txn, {'groupId': id});
+      }
+      await messages.delete(txn, finder: finder);
+      await _groups.record(id).delete(txn);
+      await stringMapStoreFactory.store('deleted_groups').record(id).put(txn, {
+        'deleted': true,
+      });
+    });
   }
 
   Future<Conversation?> getConversation(String id) async {
@@ -41,19 +84,14 @@ class ConversationRepository {
   }
 
   Future<void> addMember(String groupId, String peerId) async {
-    final conversation = await getConversation(groupId);
-    if (conversation == null || conversation.memberIds.contains(peerId)) return;
-    await saveConversation(
-      Conversation(
-        id: conversation.id,
-        name: conversation.name,
-        memberIds: [...conversation.memberIds, peerId],
-        createdAt: conversation.createdAt,
-        updatedAt: DateTime.now().toUtc().toIso8601String(),
-        lastMessage: conversation.lastMessage,
-        isGroup: conversation.isGroup,
-      ),
-    );
+    await _database.transaction((txn) async {
+      final record = _groups.record(groupId);
+      final map = await record.get(txn);
+      if (map == null) return;
+      final members = (map['memberIds'] as List).whereType<String>().toSet();
+      if (!members.add(peerId)) return;
+      await record.update(txn, {'memberIds': members.toList()});
+    });
   }
 
   Future<void> updateLastMessage(String groupId, String text) async {
@@ -63,6 +101,7 @@ class ConversationRepository {
       Conversation(
         id: conversation.id,
         name: conversation.name,
+        ownerId: conversation.ownerId,
         memberIds: conversation.memberIds,
         createdAt: conversation.createdAt,
         updatedAt: DateTime.now().toUtc().toIso8601String(),

@@ -115,6 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         top: false,
         child: Column(
           children: [
+            SizedBox(height: 25),
             SettingsTitleBar(onBack: () => Navigator.maybePop(context)),
             const SizedBox(height: 12),
             SettingsProfileHeader(username: _username),

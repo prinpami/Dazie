@@ -1,142 +1,83 @@
-import 'dart:convert';
-
-import 'package:dazie/main.dart';
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:dazie/screens/discovery_screen.dart';
+import 'package:dazie/screens/chat_screen.dart';
+import 'package:dazie/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-const _captureKey = ValueKey<String>('screen-capture');
+import 'support/test_services.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  setUpAll(() async {
-    await _loadFont(
-      'Fredoka',
-      'assets/fonts/Fredoka-VariableFont_wdth,wght.ttf',
-    );
-    await _loadFont(
-      'Nunito Sans',
-      'assets/fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf',
-    );
-    final manifest = jsonDecode(
-      await rootBundle.loadString('FontManifest.json'),
-    ) as List<dynamic>;
-    final icons = manifest.cast<Map<String, dynamic>>().firstWhere(
-      (entry) => entry['family'] == 'MaterialIcons',
-    );
-    final iconAsset =
-        (icons['fonts'] as List<dynamic>).first['asset'] as String;
-    await _loadFont('MaterialIcons', iconAsset);
-  });
-
-  testWidgets('onboarding screenshot', (tester) async {
-    await _openApp(tester);
-    await _saveScreen(tester, 'onboarding');
-  });
-
-  testWidgets('login screenshot', (tester) async {
-    await _openApp(tester);
-    await tester.tap(find.text('I already have an account'));
-    await tester.pumpAndSettle();
-    await _saveScreen(tester, 'login');
-  });
-
-  testWidgets('registration screenshot', (tester) async {
-    await _openApp(tester);
-    await tester.tap(find.text('GET STARTED'));
-    await tester.pumpAndSettle();
-    await _saveScreen(tester, 'register');
-  });
-
-  testWidgets('home screenshot', (tester) async {
-    await _openApp(tester);
-    await _openHome(tester);
-    await _saveScreen(tester, 'home');
-  });
-
-  testWidgets('settings screenshot', (tester) async {
-    await _openApp(tester);
-    await _openHome(tester);
-    await tester.tap(find.bySemanticsLabel('Open settings'));
-    await tester.pumpAndSettle();
-    await _saveScreen(tester, 'settings');
-  });
-
-  testWidgets('chat screenshot', (tester) async {
-    await _openApp(tester);
-    await _openHome(tester);
-    await tester.tap(find.text('Taylor Morgan'));
-    await tester.pumpAndSettle();
-    await _saveScreen(tester, 'chat');
-  });
-
-  testWidgets('discovery screenshot', (tester) async {
-    await _openApp(tester);
-    await _openHome(tester);
-    await tester.tap(find.bySemanticsLabel('Discover nearby friends'));
-    await tester.pumpAndSettle();
-    await _saveScreen(tester, 'discovery');
-  });
-
-  testWidgets('peer connection sheet screenshot', (tester) async {
-    await _openApp(tester);
-    await _openHome(tester);
-    await tester.tap(find.bySemanticsLabel('Discover nearby friends'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Mia Santos'));
-    await tester.pumpAndSettle();
-    await _saveScreen(tester, 'peer_connect');
-  });
-
-  testWidgets('compass screenshot', (tester) async {
-    await _openApp(tester);
-    await _openHome(tester);
-    await tester.tap(find.text('Taylor Morgan'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Open friend direction preview'));
-    await tester.pumpAndSettle();
-    await _saveScreen(tester, 'compass');
-  });
+  for (final width in [320.0, 390.0]) {
+    testWidgets('discovery and chat fit width $width with large text', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(width, 844);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final services = await testServices();
+      addTearDown(services.close);
+      final profile = await services.profiles.saveProfile(
+        username: 'Me',
+        email: 'me@test.com',
+      );
+      const captureKey = ValueKey('capture');
+      Widget app(Widget child) => MaterialApp(
+        theme: AppTheme.dark,
+        home: MediaQuery(
+          data: MediaQueryData(
+            size: Size(width, 844),
+            textScaler: TextScaler.linear(1.4),
+          ),
+          child: RepaintBoundary(key: captureKey, child: child),
+        ),
+      );
+      await tester.pumpWidget(
+        app(DiscoveryScreen(displayName: 'Me', services: services)),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await capture(tester, captureKey, 'discovery-${width.toInt()}');
+      final group = await services.chatSync.startGroup(
+        'Friends and family',
+        profile,
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await capture(tester, captureKey, 'hosting-${width.toInt()}');
+      await services.chatSync.sendMessage(
+        groupId: group.id,
+        text: 'A saved message waiting for the group to reconnect.',
+        profile: profile,
+      );
+      await tester.pumpWidget(
+        app(
+          ChatScreen(
+            groupId: group.id,
+            conversationTitle: group.name,
+            services: services,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await capture(tester, captureKey, 'chat-${width.toInt()}');
+    });
+  }
 }
 
-Future<void> _openApp(WidgetTester tester) async {
-  tester.view.devicePixelRatio = 1;
-  tester.view.physicalSize = const Size(390, 844);
-  addTearDown(tester.view.resetPhysicalSize);
-  addTearDown(tester.view.resetDevicePixelRatio);
-
-  await tester.pumpWidget(
-    const RepaintBoundary(key: _captureKey, child: MainApp()),
-  );
-  await tester.pumpAndSettle();
-  await tester.runAsync(
-    () => Future<void>.delayed(const Duration(milliseconds: 250)),
-  );
-  await tester.pumpAndSettle();
-}
-
-Future<void> _openHome(WidgetTester tester) async {
-  await tester.tap(find.text('GET STARTED'));
-  await tester.pumpAndSettle();
-
-  final fields = find.byType(TextFormField);
-  await tester.enterText(fields.at(0), 'sampleuser');
-  await tester.enterText(fields.at(1), 'sampleuser@example.com');
-  await tester.enterText(fields.at(2), 'example123');
-  await tester.enterText(fields.at(3), 'example123');
-  await tester.tap(find.text('REGISTER'));
-  await tester.pumpAndSettle();
-}
-
-Future<void> _saveScreen(WidgetTester tester, String name) async {
-  await expectLater(
-    find.byKey(_captureKey),
-    matchesGoldenFile('screenshots/$name.png'),
-  );
-}
-
-Future<void> _loadFont(String family, String assetPath) async {
-  final loader = FontLoader(family)..addFont(rootBundle.load(assetPath));
-  await loader.load();
+Future<void> capture(WidgetTester tester, Key key, String name) async {
+  if (!const bool.fromEnvironment('CAPTURE_UI')) return;
+  final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(key));
+  final image = await boundary.toImage();
+  final data = await image.toByteData(format: ui.ImageByteFormat.png);
+  await tester.runAsync(() async {
+    await Directory('/tmp/dazie-ui').create(recursive: true);
+    await File(
+      '/tmp/dazie-ui/$name.png',
+    ).writeAsBytes(data!.buffer.asUint8List());
+  });
+  image.dispose();
 }

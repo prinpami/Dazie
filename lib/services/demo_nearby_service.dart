@@ -20,6 +20,9 @@ class DemoNearbyService implements NearbyService {
   }
 
   @override
+  Future<void> disconnect(String endpointId) async {}
+
+  @override
   Future<void> reject(String endpointId) async {}
 
   @override

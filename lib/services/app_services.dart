@@ -69,7 +69,7 @@ class AppServices {
   }
 
   Future<void> close() async {
-    await chatSync.dispose();
+    await chatSync.close();
     await nearby.stop();
     await database.close();
   }

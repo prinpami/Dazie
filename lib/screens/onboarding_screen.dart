@@ -37,8 +37,10 @@ class OnboardingScreen extends StatelessWidget {
           Text(
             'Stay connected, even offline.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: DazieColors.violetText, fontSize: 18),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: DazieColors.violetText,
+              fontSize: 18,
+            ),
           ),
           const SizedBox(height: 124),
           DazieActionButton(

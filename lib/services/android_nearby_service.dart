@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
+
+import 'package:flutter/services.dart';
+
+import 'nearby_failure.dart';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:nearby_connections/nearby_connections.dart';
@@ -29,29 +32,55 @@ class AndroidNearbyService implements NearbyService {
   Future<void> _askForPermissions() async {
     final androidInfo = await DeviceInfoPlugin().androidInfo;
     final sdkVersion = androidInfo.version.sdkInt;
-    final List<Permission> permissions;
-
-    if (sdkVersion >= 33) {
-      permissions = [
-        Permission.bluetoothScan,
-        Permission.bluetoothConnect,
-        Permission.bluetoothAdvertise,
-        Permission.nearbyWifiDevices,
-      ];
-    } else if (sdkVersion >= 31) {
-      permissions = [
-        Permission.bluetoothScan,
-        Permission.bluetoothConnect,
-        Permission.bluetoothAdvertise,
-        Permission.locationWhenInUse,
-      ];
-    } else {
-      permissions = [Permission.bluetooth, Permission.locationWhenInUse];
-    }
+    final permissions = requiredNearbyPermissions(sdkVersion);
 
     final results = await permissions.request();
-    if (results.values.any((result) => !result.isGranted)) {
-      throw StateError('Nearby permissions were not granted.');
+    if (permissions.any(
+      (permission) => results[permission]?.isGranted != true,
+    )) {
+      throw const NearbyFailure(
+        'Allow Nearby devices and, on Android 12 or earlier, precise Location in Dazie app settings.',
+        openSettings: true,
+      );
+    }
+  }
+
+  Future<void> _prepare() async {
+    await _askForPermissions();
+    final sdk = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
+    final state = await const MethodChannel(
+      'dazie/device_readiness',
+    ).invokeMapMethod<String, dynamic>('check');
+    if (state == null) {
+      throw const NearbyFailure(
+        'Could not check this phone. Restart Dazie and try again.',
+      );
+    }
+    if (state['playServices'] != true) {
+      throw const NearbyFailure(
+        'Nearby chat requires Google Play services. Enable or update Google Play services on this phone.',
+      );
+    }
+    if (state['bluetoothSupported'] != true) {
+      throw const NearbyFailure(
+        'This device does not support Bluetooth nearby connections.',
+      );
+    }
+    if (state['bluetooth'] != true || state['wifi'] != true) {
+      throw const NearbyFailure(
+        'Turn on Bluetooth and Wi-Fi, then try again. No internet connection is needed.',
+      );
+    }
+    if (sdk <= 32 && state['preciseLocation'] != true) {
+      throw const NearbyFailure(
+        'Allow precise Location in Dazie app settings to find nearby phones on this Android version.',
+        openSettings: true,
+      );
+    }
+    if (sdk <= 32 && state['location'] != true) {
+      throw const NearbyFailure(
+        'Turn on Location in your phone settings, then try again. Android requires it for nearby discovery.',
+      );
     }
   }
 
@@ -71,6 +100,16 @@ class AndroidNearbyService implements NearbyService {
       _connectedEndpoints.add(endpointId);
       _events.add(
         NearbyEvent(type: NearbyEventType.connected, endpointId: endpointId),
+      );
+    } else {
+      _connectedEndpoints.remove(endpointId);
+      _events.add(
+        NearbyEvent(
+          type: NearbyEventType.connectionFailed,
+          endpointId: endpointId,
+          message:
+              'Connection was declined or failed. Keep both phones nearby and try again.',
+        ),
       );
     }
   }
@@ -108,7 +147,7 @@ class AndroidNearbyService implements NearbyService {
 
   @override
   Future<void> startHosting(String displayName) async {
-    await _askForPermissions();
+    await _prepare();
     final started = await _nearby.startAdvertising(
       displayName,
       Strategy.P2P_CLUSTER,
@@ -122,7 +161,7 @@ class AndroidNearbyService implements NearbyService {
 
   @override
   Future<void> startFinding(String displayName) async {
-    await _askForPermissions();
+    await _prepare();
     final started = await _nearby.startDiscovery(
       displayName,
       Strategy.P2P_CLUSTER,
@@ -152,6 +191,7 @@ class AndroidNearbyService implements NearbyService {
 
   @override
   Future<void> connect(String endpointId, String displayName) async {
+    await _prepare();
     await _nearby.stopDiscovery();
     final started = await _nearby.requestConnection(
       displayName,
@@ -165,6 +205,12 @@ class AndroidNearbyService implements NearbyService {
 
   @override
   Future<void> accept(String endpointId) => _acceptConnection(endpointId);
+
+  @override
+  Future<void> disconnect(String endpointId) async {
+    await _nearby.disconnectFromEndpoint(endpointId);
+    _connectedEndpoints.remove(endpointId);
+  }
 
   @override
   Future<void> reject(String endpointId) async {
@@ -191,3 +237,13 @@ class AndroidNearbyService implements NearbyService {
     _connectedEndpoints.clear();
   }
 }
+
+/// Android 13 moved Wi-Fi discovery to Nearby devices; Android 12L still needs Location.
+List<Permission> requiredNearbyPermissions(int sdk) => [
+  if (sdk >= 31) ...[
+    Permission.bluetoothScan,
+    Permission.bluetoothConnect,
+    Permission.bluetoothAdvertise,
+  ],
+  if (sdk >= 33) Permission.nearbyWifiDevices else Permission.locationWhenInUse,
+];

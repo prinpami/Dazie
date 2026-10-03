@@ -1,14 +1,12 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-
+import 'package:permission_handler/permission_handler.dart';
 import '../models/conversation.dart';
-import '../models/local_profile.dart';
 import '../services/app_services.dart';
+import '../services/chat_sync_service.dart';
 import '../services/nearby_event.dart';
+import '../services/nearby_failure.dart';
 import '../theme/app_theme.dart';
-import '../widgets/discovery_radar.dart';
-import '../widgets/peer_connect_sheet.dart';
 
 class DiscoveryScreen extends StatefulWidget {
   const DiscoveryScreen({
@@ -16,321 +14,289 @@ class DiscoveryScreen extends StatefulWidget {
     required this.displayName,
     required this.services,
   });
-
   final String displayName;
   final AppServices services;
-
   @override
   State<DiscoveryScreen> createState() => _DiscoveryScreenState();
 }
 
 class _DiscoveryScreenState extends State<DiscoveryScreen> {
-  final _groupNameController = TextEditingController();
-  final Map<String, String> _foundPeers = {};
-  final Set<String> _shownRequests = {};
-  StreamSubscription<NearbyEvent>? _nearbySubscription;
-  LocalProfile? _profile;
-  Conversation? _hostedConversation;
-  bool _isSearching = false;
+  final _name = TextEditingController();
+  final Map<String, String> _peers = {};
+  StreamSubscription<NearbyEvent>? _subscription;
+  NearbyFailure? _localError;
+  bool _working = false;
+  ChatSyncService get _sync => widget.services.chatSync;
 
   @override
   void initState() {
     super.initState();
-    _groupNameController.text = "${widget.displayName}'s group";
-    _hostedConversation = widget.services.chatSync.hostedConversation;
-    _nearbySubscription = widget.services.nearby.events.listen(
-      _handleNearbyEvent,
-    );
-    _loadProfile();
+    _name.text = "${widget.displayName}'s group";
+    _sync.addListener(_refresh);
+    _subscription = widget.services.nearby.events.listen((event) {
+      if (!mounted) return;
+      if (event.type == NearbyEventType.peerFound) {
+        setState(() => _peers[event.endpointId] = event.name);
+      }
+      if (event.type == NearbyEventType.peerLost) {
+        setState(() => _peers.remove(event.endpointId));
+      }
+    });
   }
 
-  Future<void> _loadProfile() async {
-    _profile = await widget.services.profiles.getCurrentProfile();
+  void _refresh() {
     if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    _groupNameController.dispose();
-    _nearbySubscription?.cancel();
-    widget.services.nearby.stopFinding();
+    _sync.removeListener(_refresh);
+    _subscription?.cancel();
+    _name.dispose();
     super.dispose();
   }
 
-  void _showMessage(String text) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(text)));
-  }
-
-  Future<LocalProfile?> _getProfile() async {
-    final profile =
-        _profile ?? await widget.services.profiles.getCurrentProfile();
-    if (profile == null && mounted) {
-      _showMessage('Create a local profile before using nearby chat.');
-    }
-    return profile;
-  }
-
-  Future<void> _hostGroup() async {
-    if (!widget.services.nearby.isAvailable) {
-      _showMessage('Nearby group chat needs Android devices.');
-      return;
-    }
-    final profile = await _getProfile();
-    if (profile == null || !mounted) return;
-    if (widget.services.chatSync.isHosting &&
-        widget.services.chatSync.hostedConversation != null) {
-      setState(() {
-        _hostedConversation = widget.services.chatSync.hostedConversation;
-      });
-      _showMessage('You are already hosting a group.');
-      return;
-    }
+  Future<void> _perform(Future<void> Function() action) async {
+    if (_working) return;
+    setState(() {
+      _working = true;
+      _localError = null;
+    });
+    _sync.clearError();
     try {
-      final conversation = await widget.services.chatSync.startGroup(
-        _groupNameController.text.trim().isEmpty
-            ? "${profile.username}'s group"
-            : _groupNameController.text.trim(),
-        profile,
-      );
-      if (mounted) {
-        setState(() => _hostedConversation = conversation);
-        _showMessage('Group is ready. Ask others to find and join it.');
-      }
+      await action();
     } catch (error) {
-      if (mounted) _showMessage('Could not start the group: $error');
+      if (mounted) setState(() => _localError = NearbyFailure.from(error));
+    } finally {
+      if (mounted) setState(() => _working = false);
     }
   }
 
-  Future<void> _findGroups() async {
-    if (!widget.services.nearby.isAvailable) {
-      _showMessage('Nearby group chat needs Android devices.');
-      return;
+  Future<void> _host() => _perform(() async {
+    final profile = await widget.services.profiles.getCurrentProfile();
+    if (profile == null) {
+      throw const NearbyFailure('Create a local profile first.');
     }
-    final profile = await _getProfile();
-    if (profile == null) return;
-    try {
-      await widget.services.chatSync.findGroups(profile);
-      if (mounted) setState(() => _isSearching = true);
-    } catch (error) {
-      if (mounted) _showMessage('Could not search nearby: $error');
+    await _sync.startGroup(_name.text, profile);
+    _peers.clear();
+  });
+  Future<void> _find() => _perform(() async {
+    final profile = await widget.services.profiles.getCurrentProfile();
+    if (profile == null) {
+      throw const NearbyFailure('Create a local profile first.');
     }
-  }
-
-  Future<void> _connect(String endpointId) async {
-    final profile = await _getProfile();
-    if (profile == null) return;
-    try {
-      await widget.services.chatSync.connect(endpointId, profile);
-      if (mounted) setState(() => _isSearching = false);
-    } catch (error) {
-      if (mounted) _showMessage('Could not connect: $error');
+    _peers.clear();
+    await _sync.findGroups(profile);
+  });
+  Future<void> _connect(String id) => _perform(() async {
+    final profile = await widget.services.profiles.getCurrentProfile();
+    if (profile == null) {
+      throw const NearbyFailure('Create a local profile first.');
     }
-  }
-
-  void _handleNearbyEvent(NearbyEvent event) {
-    if (!mounted) return;
-    switch (event.type) {
-      case NearbyEventType.peerFound:
-        setState(() => _foundPeers[event.endpointId] = event.name);
-        break;
-      case NearbyEventType.peerLost:
-        setState(() => _foundPeers.remove(event.endpointId));
-        break;
-      case NearbyEventType.connectionRequest:
-        unawaited(_showConnectionRequest(event));
-        break;
-      case NearbyEventType.connected:
-        setState(() => _isSearching = false);
-        _showMessage('Connected. Group details are syncing.');
-        break;
-      case NearbyEventType.disconnected:
-        _showMessage(
-          'A group member disconnected. Saved messages are still here.',
-        );
-        break;
-      case NearbyEventType.packet:
-        break;
-    }
-  }
-
-  Future<void> _showConnectionRequest(NearbyEvent event) async {
-    if (!_shownRequests.add(event.endpointId)) return;
-    final accepted = await showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: DazieColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      builder: (context) => PeerConnectSheet(
-        peerName: event.name,
-        verificationCode: event.authenticationToken,
-        onConnect: () => Navigator.pop(context, true),
-        onDecline: () => Navigator.pop(context, false),
-      ),
-    );
-    _shownRequests.remove(event.endpointId);
-    if (!mounted) return;
-    try {
-      if (accepted == true) {
-        await widget.services.chatSync.acceptConnection(event.endpointId);
-      } else {
-        await widget.services.chatSync.rejectConnection(event.endpointId);
-      }
-    } catch (error) {
-      if (mounted) _showMessage('Could not finish the connection: $error');
-    }
-  }
-
-  void _openChat(Conversation conversation) {
-    Navigator.pushNamed(
-      context,
-      '/chat',
-      arguments: {'id': conversation.id, 'title': conversation.name},
-    );
-  }
+    await _sync.connect(id, profile);
+  });
+  void _open(Conversation group) => Navigator.pushNamed(
+    context,
+    '/chat',
+    arguments: {'id': group.id, 'title': group.name},
+  );
 
   @override
   Widget build(BuildContext context) {
-    final peers = _foundPeers.entries.toList();
+    final group = widget.services.chatSync.activeConversation;
+    final busy = _working || widget.services.chatSync.isBusy;
+    final searching = widget.services.chatSync.isSearching;
+    final connecting = widget.services.chatSync.connectingEndpoint != null;
+    final error = _localError ?? widget.services.chatSync.error;
+    final available = widget.services.nearby.isAvailable;
+    final connected = group == null
+        ? 0
+        : widget.services.chatSync.connectionCount(group.id);
     return Scaffold(
-      backgroundColor: DazieColors.darkIndigo,
-      appBar: AppBar(
-        backgroundColor: DazieColors.darkIndigo,
-        title: const Text('Nearby group chat'),
-      ),
+      appBar: AppBar(title: const Text('Nearby group chat')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        padding: const EdgeInsets.all(20),
         children: [
-          const Text(
+          Text(
             'Connect without mobile data',
-            style: TextStyle(
-              color: DazieColors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            widget.services.nearby.isAvailable
-                ? 'Keep Dazie open on both phones. Turn on Bluetooth, Wi-Fi, and Location.'
-                : 'Two-device messaging is available on Android phones. This screen stays as a browser preview.',
-            style: const TextStyle(color: DazieColors.mutedText, fontSize: 13),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: DiscoveryRadar(
-              peerCount: peers.length,
-              onPeerTap: (index) {
-                if (index < peers.length) _connect(peers[index].key);
-              },
-            ),
-          ),
-          const SizedBox(height: 4),
-          if (widget.services.nearby.isAvailable) ...[
-            TextField(
-              controller: _groupNameController,
-              decoration: const InputDecoration(
-                labelText: 'Group name',
-                filled: true,
-                fillColor: DazieColors.surface,
-              ),
-              style: const TextStyle(color: DazieColors.white),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 48,
-              child: FilledButton.icon(
-                onPressed: _hostGroup,
-                icon: const Icon(Icons.wifi_tethering_rounded),
-                label: Text(
-                  _hostedConversation == null
-                      ? 'HOST A GROUP'
-                      : 'GROUP IS HOSTED',
-                ),
-              ),
-            ),
-            if (_hostedConversation != null) ...[
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () => _openChat(_hostedConversation!),
-                icon: const Icon(Icons.chat_bubble_outline_rounded),
-                label: Text('OPEN ${_hostedConversation!.name}'),
-              ),
-            ],
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 48,
-              child: OutlinedButton.icon(
-                onPressed: _isSearching ? null : _findGroups,
-                icon: const Icon(Icons.radar_rounded),
-                label: Text(
-                  _isSearching ? 'SEARCHING NEARBY…' : 'FIND A GROUP',
-                ),
-              ),
-            ),
-            if (_isSearching)
-              TextButton(
-                onPressed: () async {
-                  await widget.services.nearby.stopFinding();
-                  if (mounted) setState(() => _isSearching = false);
-                },
-                child: const Text('Stop searching'),
-              ),
-          ],
-          const SizedBox(height: 16),
-          Text(
-            widget.services.nearby.isAvailable
-                ? 'NEARBY DEVICES (${peers.length})'
-                : 'NEARBY DEVICES',
-            style: const TextStyle(
-              color: DazieColors.mutedText,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.7,
-            ),
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
-          if (peers.isEmpty)
-            const Text(
-              'Start searching to see groups hosted by nearby phones.',
-              style: TextStyle(color: DazieColors.mutedText, fontSize: 12),
+          const Text(
+            'Keep both apps open with Bluetooth and Wi-Fi on. Older Android versions also need Location.',
+            style: TextStyle(color: DazieColors.mutedText),
+          ),
+          const SizedBox(height: 20),
+          if (!available)
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Text(
+                  'Nearby connections are available on Android phones with Google Play services. Your saved chats remain available on this device.',
+                ),
+              ),
             ),
-          for (final peer in peers)
-            _PeerTile(name: peer.value, onTap: () => _connect(peer.key)),
+          if (error != null)
+            Card(
+              color: const Color(0xFF602E39),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Connection needs attention',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(error.message),
+                    if (error.openSettings)
+                      TextButton(
+                        onPressed: openAppSettings,
+                        child: const Text('Open app settings'),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          if (group != null) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Icon(
+                      connected > 0
+                          ? Icons.check_circle_outline
+                          : Icons.wifi_tethering,
+                      color: DazieColors.tangerineOrange,
+                      size: 36,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      group.name,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.services.chatSync.isHosting
+                          ? (connected == 0
+                                ? 'Hosting · waiting for members'
+                                : 'Hosting · $connected connected')
+                          : (connected == 0
+                                ? 'Disconnected · messages are saved'
+                                : 'Connected · ready to chat'),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () => _open(group),
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      label: const Text('Open chat'),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: busy
+                          ? null
+                          : () => _perform(
+                              () => widget.services.chatSync.stopNearby(),
+                            ),
+                      child: Text(
+                        widget.services.chatSync.isHosting
+                            ? 'Stop hosting'
+                            : 'Leave connection',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Leaving keeps your saved chat and messages.',
+                      style: TextStyle(
+                        color: DazieColors.mutedText,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ] else if (available) ...[
+            if (connecting) ...[
+              const LinearProgressIndicator(),
+              const SizedBox(height: 12),
+              const Text(
+                'Connecting · compare and accept the code on both phones',
+              ),
+              TextButton(
+                onPressed: _working
+                    ? null
+                    : () =>
+                          _perform(() => widget.services.chatSync.stopNearby()),
+                child: const Text('Cancel connection'),
+              ),
+            ] else ...[
+              FilledButton.icon(
+                onPressed: busy
+                    ? null
+                    : (searching
+                          ? () => _perform(
+                              () => widget.services.chatSync.stopFinding(),
+                            )
+                          : _find),
+                icon: Icon(
+                  searching ? Icons.stop_circle_outlined : Icons.radar,
+                ),
+                label: Text(searching ? 'Stop searching' : 'Find a group'),
+              ),
+              const SizedBox(height: 12),
+              if (searching) ...[
+                const LinearProgressIndicator(),
+                const SizedBox(height: 12),
+                Text(
+                  _peers.isEmpty
+                      ? 'Searching… Ask the other phone to host a group.'
+                      : 'Choose a group below to join.',
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (searching)
+                for (final peer in _peers.entries)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(
+                        Icons.groups_outlined,
+                        color: DazieColors.tangerineOrange,
+                      ),
+                      title: Text(peer.value),
+                      subtitle: const Text('Tap to join and verify the code'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: busy ? null : () => _connect(peer.key),
+                    ),
+                  ),
+              const SizedBox(height: 24),
+              Text(
+                'Or host a group',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _name,
+                enabled: !busy && !searching,
+                maxLength: 40,
+                decoration: const InputDecoration(labelText: 'Group name'),
+              ),
+              OutlinedButton.icon(
+                onPressed: busy || searching ? null : _host,
+                icon: const Icon(Icons.wifi_tethering),
+                label: Text(busy ? 'Please wait…' : 'Host a group'),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Using the same name resumes your saved group. Stop searching before hosting.',
+                style: TextStyle(color: DazieColors.mutedText, fontSize: 12),
+              ),
+            ],
+          ],
         ],
-      ),
-    );
-  }
-}
-
-class _PeerTile extends StatelessWidget {
-  const _PeerTile({required this.name, required this.onTap});
-
-  final String name;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: DazieColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        child: ListTile(
-          onTap: onTap,
-          leading: const CircleAvatar(
-            backgroundColor: DazieColors.tangerineOrange,
-            child: Icon(Icons.person_rounded, color: DazieColors.darkIndigo),
-          ),
-          title: Text(name, style: const TextStyle(color: DazieColors.white)),
-          subtitle: const Text(
-            'Tap to request a connection',
-            style: TextStyle(color: DazieColors.mutedText, fontSize: 12),
-          ),
-          trailing: const Icon(Icons.chevron_right_rounded),
-        ),
       ),
     );
   }

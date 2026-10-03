@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../models/conversation.dart';
+import '../widgets/confirm_local_delete.dart';
+import '../services/nearby_failure.dart';
 import '../services/app_services.dart';
 import '../theme/app_theme.dart';
 
@@ -53,6 +55,19 @@ class _HomeScreenState extends State<HomeScreen> {
         'displayName': widget.displayName,
       },
     );
+  }
+
+  Future<void> _deleteChat(Conversation conversation) async {
+    if (!await confirmLocalDelete(context, chat: true) || !mounted) return;
+    try {
+      await widget.services.chatSync.deleteConversation(conversation.id);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(NearbyFailure.from(error).message)),
+        );
+      }
+    }
   }
 
   List<Conversation> _filterConversations(List<Conversation> conversations) {
@@ -119,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTopBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
       child: SizedBox(
         height: 22,
         child: Row(
@@ -227,6 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     return _ConversationTile(
                       conversation: conversation,
                       onTap: () => _openChat(conversation),
+                      onDelete: () => _deleteChat(conversation),
                     );
                   },
                 ),
@@ -267,20 +283,28 @@ class _ImageButton extends StatelessWidget {
 }
 
 class _ConversationTile extends StatelessWidget {
-  const _ConversationTile({required this.conversation, required this.onTap});
+  const _ConversationTile({
+    required this.conversation,
+    required this.onTap,
+    required this.onDelete,
+  });
 
   final Conversation conversation;
+  final VoidCallback onDelete;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = Theme.of(context).textTheme.titleMedium
-        ?.copyWith(fontSize: 15, fontWeight: FontWeight.w700);
+    final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
+      fontSize: 15,
+      fontWeight: FontWeight.w700,
+    );
     final preview = conversation.lastMessage.isEmpty
         ? '${conversation.memberIds.length} members'
         : conversation.lastMessage;
 
     return InkWell(
+      onLongPress: onDelete,
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
@@ -318,15 +342,25 @@ class _ConversationTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              PopupMenuButton<String>(
+                tooltip: 'Chat options',
+                onSelected: (_) => onDelete(),
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Text('Delete'),
+                  ),
+                ],
+              ),
               SizedBox(
                 width: 52,
                 child: Text(
                   _timeLabel(conversation.updatedAt),
                   textAlign: TextAlign.end,
                   maxLines: 1,
-                  style: Theme.of(context).textTheme.labelSmall
-                      ?.copyWith(fontSize: 12),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelSmall?.copyWith(fontSize: 12),
                 ),
               ),
             ],
