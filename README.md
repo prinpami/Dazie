@@ -183,8 +183,8 @@ Google and Facebook sign-in, friend radar, and live location or direction sharin
 
 ## Presentation
 
-- Video (public Google Drive link): Not published.
-- Slides or PDF: Not published.
+- Video (public Google Drive link): [Link](https://drive.google.com/drive/folders/1ILuZ57HYMAdi_anhdAbkyuAccsT6Qaz-?usp=sharing)
+- Slides or PDF: [Slides PDF](https://drive.google.com/file/d/181MFmaMaEBh9ziOzTtj-61_qp2NWu1iZ/view?usp=sharing)
 - Square image: [Dazie mascot](assets/images/Dazie_Logo.png).
 
 ## Authorship and AI usage
