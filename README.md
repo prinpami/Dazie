@@ -1,3 +1,5 @@
+[![Made with AI](https://img.shields.io/badge/Made_with-AI_assistance-blue)](AI-USAGE.md)
+
 # Dazie
 
 Dazie is my Flutter project, created and maintained by Prios ([@prinpami](https://github.com/prinpami)). It is an offline-first group communication app for friends, families, classmates, and small groups who need to coordinate when mobile internet is unreliable.
@@ -187,11 +189,7 @@ Google and Facebook sign-in, friend radar, and live location or direction sharin
 
 ## Authorship and AI usage
 
-This is Prios's project. Prios designed the product direction, supplied the visual assets, made implementation decisions, tested the app on two Android devices, and wrote approximately 40% of the current codebase. AI assistance accounts for approximately 60% of the implementation; the specific contributions, corrections, and ownership record are documented in [AI-USAGE.md](AI-USAGE.md).
-
-## AI usage
-
-Read [AI-USAGE.md](AI-USAGE.md) for the AI-assisted work record, review decisions, and code ownership details.
+This is my Flutter project. I came up with the offline-first group chat idea and worked mostly on the screens and app flow. I also did parts of Login and Register and some basic database and service setup. **AI credit:** I used OpenAI Codex for about 78% of the code; I wrote about 22%. See [AI-USAGE.md](AI-USAGE.md) for examples and commit links.
 
 ## Security checklist
 
