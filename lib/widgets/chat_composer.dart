@@ -61,7 +61,9 @@ class _ChatComposerState extends State<ChatComposer> {
                 hintText: 'Message',
                 isDense: true,
                 filled: true,
-                fillColor: DazieColors.surface,
+                fillColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 13,
@@ -71,7 +73,7 @@ class _ChatComposerState extends State<ChatComposer> {
                   borderSide: BorderSide.none,
                 ),
               ),
-              style: const TextStyle(color: DazieColors.white, fontSize: 14),
+              style: const TextStyle(fontSize: 14),
             ),
           ),
           const SizedBox(width: 9),

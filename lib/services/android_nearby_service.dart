@@ -10,6 +10,7 @@ import 'package:nearby_connections/nearby_connections.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'nearby_event.dart';
+import 'nearby_packet.dart';
 import 'nearby_service.dart';
 
 class AndroidNearbyService implements NearbyService {
@@ -127,13 +128,13 @@ class AndroidNearbyService implements NearbyService {
       onPayLoadRecieved: (receivedEndpointId, payload) {
         if (payload.type != PayloadType.BYTES || payload.bytes == null) return;
         try {
-          final decoded = jsonDecode(utf8.decode(payload.bytes!));
-          if (decoded is Map) {
+          final decoded = NearbyPacket.decode(payload.bytes!);
+          if (decoded != null) {
             _events.add(
               NearbyEvent(
                 type: NearbyEventType.packet,
                 endpointId: receivedEndpointId,
-                packet: Map<String, Object?>.from(decoded),
+                packet: decoded,
               ),
             );
           }
@@ -223,7 +224,7 @@ class AndroidNearbyService implements NearbyService {
     Map<String, Object?> packet,
   ) async {
     final bytes = Uint8List.fromList(utf8.encode(jsonEncode(packet)));
-    if (bytes.length > 30000) {
+    if (bytes.length > NearbyPacket.maxBytes) {
       throw ArgumentError('This message is too large to send nearby.');
     }
     await _nearby.sendBytesPayload(endpointId, bytes);
@@ -231,9 +232,20 @@ class AndroidNearbyService implements NearbyService {
 
   @override
   Future<void> stop() async {
-    await _nearby.stopAdvertising();
-    await _nearby.stopDiscovery();
-    await _nearby.stopAllEndpoints();
+    Object? failure;
+    // Try every cleanup even if one radio operation fails.
+    for (final stop in [
+      _nearby.stopAdvertising,
+      _nearby.stopDiscovery,
+      _nearby.stopAllEndpoints,
+    ]) {
+      try {
+        await stop();
+      } catch (error) {
+        failure ??= error;
+      }
+    }
+    if (failure != null) throw failure;
     _connectedEndpoints.clear();
   }
 }

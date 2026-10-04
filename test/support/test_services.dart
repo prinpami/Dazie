@@ -11,6 +11,9 @@ class FakeNearby implements NearbyService {
   final accepted = <String>[];
   final rejected = <String>[];
   Object? hostingError;
+  Object? stoppingError;
+  Completer<void>? stoppingGate;
+  int stopCalls = 0;
   Completer<void>? hostingGate;
   int hostingCalls = 0;
   int findingCalls = 0;
@@ -78,6 +81,9 @@ class FakeNearby implements NearbyService {
 
   @override
   Future<void> stop() async {
+    stopCalls++;
+    if (stoppingGate != null) await stoppingGate!.future;
+    if (stoppingError != null) throw stoppingError!;
     connected.clear();
   }
 }

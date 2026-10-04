@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'services/app_services.dart';
 import 'widgets/peer_connect_sheet.dart';
 import 'screens/chat_screen.dart';
-import 'screens/compass_screen.dart';
 import 'screens/discovery_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
@@ -38,12 +37,18 @@ class _MainAppState extends State<MainApp> {
   void initState() {
     super.initState();
     services.chatSync.addListener(_onSessionChanged);
+    services.settings.addListener(_onAppearanceChanged);
   }
 
   @override
   void dispose() {
     services.chatSync.removeListener(_onSessionChanged);
+    services.settings.removeListener(_onAppearanceChanged);
     super.dispose();
+  }
+
+  void _onAppearanceChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onSessionChanged() {
@@ -121,17 +126,22 @@ class _MainAppState extends State<MainApp> {
       navigatorKey: _navigatorKey,
       title: 'Dazie',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: switch (services.settings.current.appearance) {
+        'Light' => ThemeMode.light,
+        'Dark' => ThemeMode.dark,
+        _ => ThemeMode.system,
+      },
       initialRoute: '/',
       onGenerateRoute: (settings) {
         late final Widget screen;
         final arguments = settings.arguments;
         final routeValues = arguments is Map ? arguments : const {};
 
-        // The home route gets a display name from the local demo form.
         switch (settings.name) {
           case '/':
-            screen = const OnboardingScreen();
+            screen = OnboardingScreen(services: services);
             break;
           case '/login':
             screen = LoginScreen(services: services);
@@ -141,13 +151,18 @@ class _MainAppState extends State<MainApp> {
             break;
           case '/home':
             screen = HomeScreen(
-              displayName: settings.arguments as String? ?? 'taylor',
+              displayName:
+                  routeValues['displayName'] as String? ??
+                  (arguments is String ? arguments : 'taylor'),
+              profileId: routeValues['profileId'] as String?,
               services: services,
             );
             break;
           case '/settings':
             screen = SettingsScreen(
-              displayName: settings.arguments as String? ?? 'taylor',
+              displayName:
+                  routeValues['displayName'] as String? ??
+                  (arguments is String ? arguments : 'taylor'),
               services: services,
             );
             break;
@@ -160,17 +175,14 @@ class _MainAppState extends State<MainApp> {
             break;
           case '/discover':
             screen = DiscoveryScreen(
-              displayName: settings.arguments as String? ?? 'taylor',
+              displayName:
+                  routeValues['displayName'] as String? ??
+                  (arguments is String ? arguments : 'taylor'),
               services: services,
             );
             break;
-          case '/compass':
-            screen = CompassScreen(
-              friendName: settings.arguments as String? ?? 'Jordan Lee',
-            );
-            break;
           default:
-            screen = const OnboardingScreen();
+            screen = OnboardingScreen(services: services);
             break;
         }
 

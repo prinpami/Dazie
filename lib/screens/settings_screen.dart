@@ -1,12 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../models/app_settings.dart';
 import '../services/app_services.dart';
-import '../theme/app_theme.dart';
-import '../widgets/settings_components.dart';
-import '../widgets/settings_profile_header.dart';
+import '../services/nearby_failure.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -14,201 +10,149 @@ class SettingsScreen extends StatefulWidget {
     required this.displayName,
     required this.services,
   });
-
   final String displayName;
   final AppServices services;
-
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isActive = true;
-  bool _isLoggingOut = false;
-  String _appearance = 'System';
+  bool _saving = false;
+  bool _loggingOut = false;
+  String? _error;
+  bool get _working => _saving || _loggingOut;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final settings = await widget.services.settings.getSettings();
-    if (!mounted) return;
-    setState(() {
-      _isActive = settings.activeStatus;
-      _appearance = settings.appearance;
-    });
-  }
-
-  Future<void> _saveSettings() async {
-    await widget.services.settings.saveSettings(
-      AppSettings(activeStatus: _isActive, appearance: _appearance),
+  Future<void> _chooseAppearance() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final option in ['System', 'Light', 'Dark'])
+                ListTile(
+                  title: Text(option),
+                  trailing:
+                      option == widget.services.settings.current.appearance
+                      ? const Icon(Icons.check)
+                      : null,
+                  onTap: () => Navigator.pop(context, option),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
-  }
-
-  void _toggleActive() {
-    setState(() => _isActive = !_isActive);
-    unawaited(_saveSettings());
+    if (selected == null || !mounted) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.services.settings.saveSettings(
+        AppSettings(
+          activeStatus: widget.services.settings.current.activeStatus,
+          appearance: selected,
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Could not save appearance. Try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   Future<void> _logOut() async {
-    if (_isLoggingOut) return;
-    _isLoggingOut = true;
-    await widget.services.chatSync.stopNearby();
-    if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
-  }
-
-  String get _username {
-    final identity = widget.displayName.split('@').first;
-    final handle = identity.replaceAll(RegExp(r'\s+'), '').toLowerCase();
-    return '@${handle.isEmpty ? 'taylor' : handle}';
-  }
-
-  void _showPreviewMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  void _chooseAppearance() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: DazieColors.searchPurple,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final option in ['System', 'Light', 'Dark'])
-              ListTile(
-                title: Text(option),
-                trailing: option == _appearance
-                    ? const Icon(
-                        Icons.check,
-                        color: DazieColors.tangerineOrange,
-                      )
-                    : null,
-                onTap: () {
-                  setState(() => _appearance = option);
-                  unawaited(_saveSettings());
-                  Navigator.pop(context);
-                  if (option != 'Dark') {
-                    _showPreviewMessage(
-                      'Appearance selection is a visual preview for now.',
-                    );
-                  }
-                },
-              ),
-          ],
-        ),
-      ),
-    );
+    if (_working) return;
+    setState(() {
+      _loggingOut = true;
+      _error = null;
+    });
+    try {
+      await widget.services.chatSync.stopNearby();
+      await widget.services.profiles.clearCurrentProfile();
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error is NearbyFailure
+              ? error.message
+              : 'Could not log out. Try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loggingOut = false);
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: DazieColors.darkIndigo,
+  Widget build(BuildContext context) => PopScope(
+    canPop: !_working,
+    child: Scaffold(
+      appBar: AppBar(title: const Text('Settings')),
       body: SafeArea(
-        top: false,
-        child: Column(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
           children: [
-            SizedBox(height: 25),
-            SettingsTitleBar(onBack: () => Navigator.maybePop(context)),
-            const SizedBox(height: 12),
-            SettingsProfileHeader(username: _username),
-            const SizedBox(height: 39),
-            const SettingsSectionHeading(),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 48),
-              child: SettingsCard(
-                height: 60,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: () => _showPreviewMessage(
-                    'This local profile is saved on this device. Passwords are not stored.',
-                  ),
-                  child: const SettingRow(
-                    iconAsset: 'assets/images/Vector-2.png',
-                    title: 'Local Profile',
-                    subtitle: 'Saved on this device',
-                  ),
+            CircleAvatar(
+              radius: 36,
+              backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
+              foregroundColor: Theme.of(
+                context,
+              ).colorScheme.onTertiaryContainer,
+              child: Text(
+                widget.displayName.substring(0, 1).toUpperCase(),
+                style: const TextStyle(
+                  fontFamily: 'Fredoka',
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
-            const SizedBox(height: 15),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 48),
-              child: SettingsCard(
-                height: 73,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(8),
-                        ),
-                        onTap: _toggleActive,
-                        child: SettingRow(
-                          iconAsset: 'assets/images/Vector.png',
-                          title: 'Active Status',
-                          value: _isActive ? 'On' : 'Off',
-                        ),
-                      ),
-                    ),
-                    Container(
-                      height: 1,
-                      margin: const EdgeInsets.only(left: 47, right: 12),
-                      color: const Color(0x668F8BB7),
-                    ),
-                    Expanded(
-                      child: InkWell(
-                        borderRadius: const BorderRadius.vertical(
-                          bottom: Radius.circular(8),
-                        ),
-                        onTap: _chooseAppearance,
-                        child: SettingRow(
-                          iconAsset: 'assets/images/Vector-1.png',
-                          title: 'Dark mode',
-                          value: _appearance,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            const SizedBox(height: 10),
+            Text(
+              widget.displayName,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 24),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.brightness_6_outlined),
+                title: const Text('Appearance'),
+                subtitle: Text(widget.services.settings.current.appearance),
+                onTap: _working ? null : _chooseAppearance,
               ),
             ),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(43, 0, 43, 50),
-              child: SizedBox(
-                height: 48,
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _logOut,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: DazieColors.electricViolet,
-                    foregroundColor: DazieColors.white,
-                    elevation: 3,
-                    shadowColor: const Color(0xFF623FBE),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  child: const Text('LOG OUT'),
+            if (_saving)
+              const LinearProgressIndicator(
+                semanticsLabel: 'Saving appearance',
+              ),
+            const SizedBox(height: 24),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
+            if (_loggingOut)
+              const LinearProgressIndicator(semanticsLabel: 'Logging out'),
+            OutlinedButton.icon(
+              onPressed: _working ? null : _logOut,
+              icon: const Icon(Icons.logout_rounded),
+              label: Text(_loggingOut ? 'Logging out…' : 'Log out'),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }

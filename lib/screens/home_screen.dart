@@ -11,10 +11,12 @@ class HomeScreen extends StatefulWidget {
     super.key,
     required this.displayName,
     required this.services,
+    this.profileId,
   });
 
   final String displayName;
   final AppServices services;
+  final String? profileId;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -23,12 +25,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   String _searchText = '';
-  late final Stream<List<Conversation>> _conversationsStream;
+  late Stream<List<Conversation>> _conversationsStream;
 
   @override
   void initState() {
     super.initState();
-    _conversationsStream = widget.services.conversations.watchConversations();
+    _conversationsStream = widget.services.conversations.watchConversations(
+      profileId: widget.profileId,
+    );
   }
 
   @override
@@ -38,11 +42,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openSettings() {
-    Navigator.pushNamed(context, '/settings', arguments: widget.displayName);
+    Navigator.pushNamed(
+      context,
+      '/settings',
+      arguments: {
+        'displayName': widget.displayName,
+        'profileId': widget.profileId,
+      },
+    );
   }
 
   void _openDiscovery() {
-    Navigator.pushNamed(context, '/discover', arguments: widget.displayName);
+    Navigator.pushNamed(
+      context,
+      '/discover',
+      arguments: {
+        'displayName': widget.displayName,
+        'profileId': widget.profileId,
+      },
+    );
   }
 
   void _openChat(Conversation conversation) {
@@ -83,21 +101,48 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DazieColors.darkIndigo,
       body: Stack(
         children: [
           SafeArea(
-            top: false,
-            bottom: false,
             child: Column(
               children: [
                 _buildTopBar(),
                 Expanded(
                   child: StreamBuilder<List<Conversation>>(
                     stream: _conversationsStream,
-                    builder: (context, snapshot) => _buildMessages(
-                      _filterConversations(snapshot.data ?? []),
-                    ),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('Could not load saved conversations.'),
+                              TextButton(
+                                onPressed: () => setState(() {
+                                  _conversationsStream = widget
+                                      .services
+                                      .conversations
+                                      .watchConversations(
+                                        profileId: widget.profileId,
+                                      );
+                                }),
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            semanticsLabel: 'Loading conversations',
+                          ),
+                        );
+                      }
+                      return _buildMessages(
+                        _filterConversations(snapshot.data ?? []),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -120,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'assets/images/RadarButton.png',
                       width: 25,
                       height: 25,
-                      semanticLabel: 'Discover nearby friends',
+                      semanticLabel: 'Find a nearby group',
                     ),
                   ),
                 ),
@@ -134,17 +179,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTopBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: SizedBox(
-        height: 22,
+        height: 48,
         child: Row(
           children: [
-            Image.asset(
-              'assets/images/DAZIE.png',
-              width: 76,
-              height: 20,
-              fit: BoxFit.contain,
-              semanticLabel: 'Dazie',
+            const Text(
+              'DAZIE',
+              style: TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 27,
+                fontWeight: FontWeight.w700,
+                color: DazieColors.tangerineOrange,
+              ),
             ),
             const Spacer(),
             _ImageButton(
@@ -173,35 +220,32 @@ class _HomeScreenState extends State<HomeScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: SizedBox(
-            height: 28,
             child: TextField(
               controller: _searchController,
               onChanged: (value) => setState(() => _searchText = value),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Search Friends or Group Chat',
-                hintStyle: const TextStyle(
-                  color: Color(0xFFC7C5DD),
-                  fontSize: 12,
-                ),
-                prefixIcon: const Icon(
-                  Icons.search_rounded,
-                  color: Color(0xFFD6D4E6),
-                  size: 15,
-                ),
+                hintText: 'Search chats',
+                hintStyle: const TextStyle(fontSize: 12),
+                prefixIcon: const Icon(Icons.search_rounded, size: 15),
                 prefixIconConstraints: const BoxConstraints(
                   minWidth: 32,
                   minHeight: 28,
                 ),
                 filled: true,
-                fillColor: DazieColors.searchPurple,
-                contentPadding: EdgeInsets.zero,
+                fillColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 12,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),
                   borderSide: BorderSide.none,
                 ),
               ),
-              style: const TextStyle(color: DazieColors.white, fontSize: 12),
+              style: const TextStyle(fontSize: 12),
             ),
           ),
         ),
@@ -214,19 +258,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        Icon(
+                          _searchText.isEmpty
+                              ? Icons.forum_rounded
+                              : Icons.search_off_rounded,
+                          size: 56,
+                          color: Theme.of(context).colorScheme.tertiary,
+                        ),
+                        const SizedBox(height: 12),
                         Text(
                           _searchText.isEmpty
-                              ? 'Your conversations will show up here.'
-                              : 'No conversations found',
+                              ? 'Start your first chat'
+                              : 'No chats found',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: DazieColors.mutedText),
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
                         if (_searchText.isEmpty) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 18),
                           FilledButton.icon(
                             onPressed: _openDiscovery,
                             icon: const Icon(Icons.radar_rounded),
-                            label: const Text('Host or join a group'),
+                            label: const Text('Find people nearby'),
                           ),
                         ],
                       ],
@@ -236,7 +288,6 @@ class _HomeScreenState extends State<HomeScreen> {
               : ListView.builder(
                   padding: const EdgeInsets.only(bottom: 12),
                   itemCount: conversations.length,
-                  itemExtent: 73,
                   itemBuilder: (context, index) {
                     final conversation = conversations[index];
                     return _ConversationTile(
@@ -273,9 +324,17 @@ class _ImageButton extends StatelessWidget {
       child: InkWell(
         onTap: onPressed,
         child: SizedBox(
-          width: width,
-          height: 22,
-          child: Image.asset(asset, fit: BoxFit.contain),
+          width: 48,
+          height: 48,
+          child: Center(
+            child: Image.asset(
+              asset,
+              width: width,
+              height: 22,
+              fit: BoxFit.contain,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
         ),
       ),
     );
@@ -308,14 +367,15 @@ class _ConversationTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
-        height: 73,
+        height: null,
         child: Padding(
-          padding: const EdgeInsets.only(left: 25, right: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               const CircleAvatar(
                 radius: 29,
                 backgroundColor: DazieColors.tangerineOrange,
+                child: Icon(Icons.groups_rounded, size: 27),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -334,10 +394,9 @@ class _ConversationTile extends StatelessWidget {
                       preview,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: DazieColors.mutedText,
-                        fontSize: 14,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(fontSize: 14),
                     ),
                   ],
                 ),
@@ -346,22 +405,8 @@ class _ConversationTile extends StatelessWidget {
                 tooltip: 'Chat options',
                 onSelected: (_) => onDelete(),
                 itemBuilder: (_) => [
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Text('Delete'),
-                  ),
+                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
                 ],
-              ),
-              SizedBox(
-                width: 52,
-                child: Text(
-                  _timeLabel(conversation.updatedAt),
-                  textAlign: TextAlign.end,
-                  maxLines: 1,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelSmall?.copyWith(fontSize: 12),
-                ),
               ),
             ],
           ),
@@ -369,13 +414,4 @@ class _ConversationTile extends StatelessWidget {
       ),
     );
   }
-}
-
-String _timeLabel(String value) {
-  final date = DateTime.tryParse(value)?.toLocal();
-  if (date == null) return '';
-  final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
-  final minute = date.minute.toString().padLeft(2, '0');
-  final period = date.hour < 12 ? 'am' : 'pm';
-  return '$hour:$minute $period';
 }

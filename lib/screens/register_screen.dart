@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../services/app_services.dart';
 import '../widgets/dazie_action_button.dart';
 import '../widgets/dazie_page.dart';
-import '../widgets/dazie_provider_buttons.dart';
 import '../widgets/dazie_text_field.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -17,147 +16,101 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  bool _isSubmitting = false;
+  final _username = TextEditingController();
+  bool _saving = false;
+  String? _error;
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    _username.dispose();
     super.dispose();
   }
 
   Future<void> _register() async {
-    if (_isSubmitting) return;
-    if (_formKey.currentState?.validate() != true) return;
-    _isSubmitting = true;
-
-    final profile = await widget.services.profiles.saveProfile(
-      username: _usernameController.text,
-      email: _emailController.text,
-    );
-    if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/home',
-      (route) => false,
-      arguments: profile.username,
-    );
+    if (_saving || _formKey.currentState?.validate() != true) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final profile = await widget.services.profiles.createProfile(
+        username: _username.text,
+      );
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/home',
+        (_) => false,
+        arguments: {'displayName': profile.username, 'profileId': profile.id},
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = error is StateError
+            ? error.message.toString()
+            : 'Could not register. Try again.';
+      });
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return DaziePage(
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Sign up',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall,
+  Widget build(BuildContext context) => DaziePage(
+    child: Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Register',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Fredoka',
+              fontSize: 34,
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 49),
-            SizedBox(
-              height: 47,
-              child: DazieTextField(
-                controller: _usernameController,
-                hint: 'Username',
-                textCapitalization: TextCapitalization.none,
-                textInputAction: TextInputAction.next,
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Enter a username.'
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 11),
-            SizedBox(
-              height: 47,
-              child: DazieTextField(
-                controller: _emailController,
-                hint: 'Email',
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                validator: (value) => value == null || !value.contains('@')
-                    ? 'Enter a valid email.'
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 11),
-            SizedBox(
-              height: 47,
-              child: DazieTextField(
-                controller: _passwordController,
-                hint: 'Password',
-                obscureText: true,
-                textInputAction: TextInputAction.next,
-                validator: (value) => value == null || value.length < 6
-                    ? 'Use at least six characters.'
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 11),
-            SizedBox(
-              height: 47,
-              child: DazieTextField(
-                controller: _confirmPasswordController,
-                hint: 'Confirm Password',
-                obscureText: true,
-                textInputAction: TextInputAction.done,
-                validator: (value) => value != _passwordController.text
-                    ? 'Passwords do not match.'
-                    : null,
-                onSubmitted: (_) => _register(),
-              ),
-            ),
-            const SizedBox(height: 18),
-            DazieActionButton(label: 'REGISTER', onPressed: _register),
-            const SizedBox(height: 10),
-            Text(
-              'This creates a local profile. The password is not saved because there is no online account yet.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 21),
-            const DazieProviderButtons(),
-            const SizedBox(height: 31),
-            const _LegalNotice(),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LegalNotice extends StatelessWidget {
-  const _LegalNotice();
-
-  @override
-  Widget build(BuildContext context) {
-    return Text.rich(
-      TextSpan(
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 14),
-        children: const [
-          TextSpan(text: 'By signing up to Dazie, you agree to our '),
-          TextSpan(
-            text: 'Terms',
-            style: TextStyle(fontWeight: FontWeight.w800),
           ),
-          TextSpan(text: ' and '),
-          TextSpan(
-            text: 'Privacy Policy.',
-            style: TextStyle(fontWeight: FontWeight.w800),
+          const SizedBox(height: 6),
+          Text(
+            'Make an account on this phone',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 24),
+          DazieTextField(
+            controller: _username,
+            hint: 'Your name',
+            label: 'Your name',
+            textInputAction: TextInputAction.done,
+            validator: (value) => value == null || value.trim().isEmpty
+                ? 'Enter your name.'
+                : null,
+            onSubmitted: (_) => _register(),
+          ),
+          const SizedBox(height: 16),
+          if (_error != null) ...[
+            Text(
+              _error!,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (_saving) ...[
+            const LinearProgressIndicator(semanticsLabel: 'Creating account'),
+            const SizedBox(height: 12),
+          ],
+          DazieActionButton(
+            label: _saving ? 'Creating…' : 'Create account',
+            onPressed: _saving ? null : _register,
+          ),
+          TextButton(
+            onPressed: _saving ? null : () => Navigator.maybePop(context),
+            child: const Text('Back'),
           ),
         ],
       ),
-      textAlign: TextAlign.center,
-    );
-  }
+    ),
+  );
 }

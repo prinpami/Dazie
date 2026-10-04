@@ -9,13 +9,15 @@ class DazieActionButton extends StatelessWidget {
   });
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
-      width: double.infinity,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: 48,
+        minWidth: double.infinity,
+      ),
       child: FilledButton(onPressed: onPressed, child: Text(label)),
     );
   }

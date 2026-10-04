@@ -52,12 +52,12 @@ abstract final class AppTheme {
       bodyMedium: TextStyle(
         fontFamily: 'Nunito Sans',
         fontSize: 14,
-        color: DazieColors.fieldText,
+        color: Color(0xFF59566B),
       ),
       bodySmall: TextStyle(
         fontFamily: 'Nunito Sans',
         fontSize: 13,
-        color: DazieColors.fieldText,
+        color: Color(0xFF59566B),
       ),
       labelLarge: TextStyle(
         fontFamily: 'Nunito Sans',
@@ -68,14 +68,14 @@ abstract final class AppTheme {
       labelSmall: TextStyle(
         fontFamily: 'Nunito Sans',
         fontSize: 13,
-        color: DazieColors.fieldText,
+        color: Color(0xFF59566B),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       isDense: true,
       filled: true,
       fillColor: DazieColors.fieldFill,
-      hintStyle: const TextStyle(color: DazieColors.fieldText, fontSize: 14),
+      hintStyle: const TextStyle(color: Color(0xFF59566B), fontSize: 14),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -98,7 +98,7 @@ abstract final class AppTheme {
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(48),
         backgroundColor: DazieColors.tangerineOrange,
-        foregroundColor: DazieColors.white,
+        foregroundColor: DazieColors.darkIndigo,
         elevation: 2,
         shadowColor: const Color(0xFFDB782A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -112,7 +112,7 @@ abstract final class AppTheme {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         minimumSize: const Size.fromHeight(48),
-        foregroundColor: DazieColors.fieldText,
+        foregroundColor: const Color(0xFF59566B),
         backgroundColor: DazieColors.fieldFill,
         side: const BorderSide(color: Color(0xFFE2E2E2)),
         elevation: 1,
@@ -126,7 +126,7 @@ abstract final class AppTheme {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: DazieColors.tangerineOrange,
+        foregroundColor: DazieColors.midnightIndigo,
         textStyle: const TextStyle(
           fontFamily: 'Nunito Sans',
           fontWeight: FontWeight.w700,
@@ -232,6 +232,10 @@ abstract final class AppTheme {
       style: OutlinedButton.styleFrom(
         foregroundColor: DazieColors.white,
         disabledForegroundColor: DazieColors.mutedText.withValues(alpha: 0.45),
+        textStyle: const TextStyle(
+          fontFamily: 'Nunito Sans',
+          fontWeight: FontWeight.w700,
+        ),
         minimumSize: const Size.fromHeight(48),
         side: const BorderSide(color: DazieColors.electricViolet),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -240,7 +244,10 @@ abstract final class AppTheme {
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: DazieColors.tangerineOrange,
-        textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(
+          fontFamily: 'Nunito Sans',
+          fontWeight: FontWeight.w700,
+        ),
       ),
     ),
   );

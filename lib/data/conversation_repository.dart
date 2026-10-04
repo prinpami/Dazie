@@ -111,7 +111,7 @@ class ConversationRepository {
     );
   }
 
-  Stream<List<Conversation>> watchConversations() {
+  Stream<List<Conversation>> watchConversations({String? profileId}) {
     final query = _groups.query(
       finder: Finder(sortOrders: [SortOrder('updatedAt', false)]),
     );
@@ -120,6 +120,12 @@ class ConversationRepository {
         .map(
           (snapshots) => snapshots
               .map((snapshot) => Conversation.fromMap(snapshot.value))
+              .where(
+                (conversation) =>
+                    profileId == null ||
+                    conversation.ownerId == profileId ||
+                    conversation.memberIds.contains(profileId),
+              )
               .toList(),
         );
   }

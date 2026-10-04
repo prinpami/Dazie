@@ -10,18 +10,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'support/test_services.dart';
 
 void main() {
-  test(
-    'runtime permission matrix covers Android API 23 through 37',
-    () {
-      for (final sdk in [23, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37]) {
-        final permissions = requiredNearbyPermissions(sdk);
-        expect(permissions.contains(Permission.locationWhenInUse), sdk <= 32);
-        expect(permissions.contains(Permission.nearbyWifiDevices), sdk >= 33);
-        expect(permissions.contains(Permission.bluetoothScan), sdk >= 31);
-        expect(permissions.contains(Permission.bluetooth), false);
-      }
-    },
-  );
+  test('runtime permission matrix covers Android API 23 through 37', () {
+    for (final sdk in [23, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37]) {
+      final permissions = requiredNearbyPermissions(sdk);
+      expect(permissions.contains(Permission.locationWhenInUse), sdk <= 32);
+      expect(permissions.contains(Permission.nearbyWifiDevices), sdk >= 33);
+      expect(permissions.contains(Permission.bluetoothScan), sdk >= 31);
+      expect(permissions.contains(Permission.bluetooth), false);
+    }
+  });
   test('Wi-Fi permissions are not capped; location covers Android 12L', () {
     final manifest = File(
       'android/app/src/main/AndroidManifest.xml',

@@ -20,6 +20,16 @@ class ChatMessage {
   final bool isMine;
   final String deliveryStatus;
 
+  // Stored status strings stay compatible with earlier prototype builds.
+  // Receipts describe at least one immediate peer, never the entire group.
+  String get deliveryLabel => switch (deliveryStatus) {
+    'queued' => 'Waiting to send',
+    'sent' => 'Sent to a nearby device',
+    'delivered' => 'Confirmed by a nearby device',
+    'received' => 'Received',
+    _ => 'Status unavailable',
+  };
+
   String get time {
     final date = DateTime.tryParse(createdAt)?.toLocal();
     if (date == null) return '';

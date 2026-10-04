@@ -11,6 +11,7 @@ import '../models/conversation.dart';
 import '../models/local_profile.dart';
 import '../models/peer_profile.dart';
 import 'nearby_event.dart';
+import 'nearby_packet.dart';
 import 'nearby_failure.dart';
 import 'nearby_service.dart';
 
@@ -44,6 +45,7 @@ class ChatSyncService extends ChangeNotifier {
   bool _searching = false;
   bool _busy = false;
   bool _closed = false;
+  bool _stopping = false;
   int _generation = 0;
   String? _connecting;
   NearbyFailure? _error;
@@ -66,6 +68,7 @@ class ChatSyncService extends ChangeNotifier {
   bool get hasSession => _active != null || _hosting;
 
   void _queueEvent(NearbyEvent event) {
+    if (_stopping || _closed) return;
     final generation = _generation;
     final previous = _eventQueue;
     final next = previous == null
@@ -77,7 +80,7 @@ class ChatSyncService extends ChangeNotifier {
   }
 
   Future<void> _dispatchEvent(NearbyEvent event, int generation) async {
-    if (_closed || generation != _generation) return;
+    if (_closed || _stopping || generation != _generation) return;
     final handler = Completer<void>();
     _activeEventHandler = handler;
     try {
@@ -268,22 +271,32 @@ class ChatSyncService extends ChangeNotifier {
       throw const NearbyFailure('Wait for the current operation to finish.');
     }
     _busy = true;
+    _stopping = true;
     _generation++;
-    for (final timer in _timeouts.values) {
-      timer.cancel();
-    }
-    _timeouts.clear();
-    _requests.clear();
-    _connecting = null;
+    _error = null;
     _changed();
     try {
+      // Let the in-flight handler finish before shutting down the transport.
+      // Events queued before this stop are discarded by the generation check.
+      await _activeEventHandler?.future;
       await nearby.stop();
-    } finally {
+      for (final timer in _timeouts.values) {
+        timer.cancel();
+      }
+      _timeouts.clear();
+      _requests.clear();
+      _connecting = null;
       _endpointGroups.clear();
       _endpointPeers.clear();
       _active = null;
       _hosting = false;
       _searching = false;
+    } catch (error) {
+      // Keep session state so the user can retry a partially failed shutdown.
+      _report(error);
+      rethrow;
+    } finally {
+      _stopping = false;
       _busy = false;
       _changed();
     }
@@ -346,7 +359,7 @@ class ChatSyncService extends ChangeNotifier {
       case NearbyEventType.peerLost:
         return;
     }
-    final packet = event.packet;
+    final packet = NearbyPacket.validate(event.packet);
     final profile = _profile ?? await profiles.getCurrentProfile();
     if (packet == null || profile == null) return;
     _profile = profile;
@@ -369,10 +382,16 @@ class ChatSyncService extends ChangeNotifier {
     }
   }
 
+  Future<void> _sendPacket(String endpointId, Map<String, Object?> packet) =>
+      nearby.sendPacket(endpointId, {
+        'version': NearbyPacket.version,
+        ...packet,
+      });
+
   Future<void> _sendHello(String endpointId) async {
     final profile = _profile ?? await profiles.getCurrentProfile();
     if (profile == null) return;
-    await nearby.sendPacket(endpointId, {
+    await _sendPacket(endpointId, {
       'type': 'hello',
       'peerId': profile.id,
       'displayName': profile.username,
@@ -387,6 +406,10 @@ class ChatSyncService extends ChangeNotifier {
     final peerId = packet['peerId'];
     final name = packet['displayName'];
     if (peerId is! String || name is! String || peerId == profile.id) return;
+    if (_endpointPeers[endpointId] != null &&
+        _endpointPeers[endpointId] != peerId) {
+      return;
+    }
     _endpointPeers[endpointId] = peerId;
     await peers.savePeer(
       PeerProfile(
@@ -407,7 +430,7 @@ class ChatSyncService extends ChangeNotifier {
       await _sendGroup(id, _active!);
     }
     for (final message in await messages.getLatestMessages(group.id)) {
-      await nearby.sendPacket(endpointId, {
+      await _sendPacket(endpointId, {
         'type': 'message',
         'message': message.toMap(),
       });
@@ -421,7 +444,8 @@ class ChatSyncService extends ChangeNotifier {
     LocalProfile profile,
   ) async {
     if (_hosting ||
-        (_connecting != endpointId && !_endpointGroups.containsKey(endpointId))) {
+        (_connecting != endpointId &&
+            !_endpointGroups.containsKey(endpointId))) {
       return;
     }
     final id = packet['groupId'];
@@ -498,15 +522,12 @@ class ChatSyncService extends ChangeNotifier {
       deliveryStatus: source.senderId == profile.id ? 'delivered' : 'received',
     );
     final isNew = await messages.saveMessage(message);
-    await nearby.sendPacket(endpointId, {
-      'type': 'ack',
-      'messageId': message.id,
-    });
+    await _sendPacket(endpointId, {'type': 'ack', 'messageId': message.id});
     if (isNew && _hosting) {
       for (final id in _groupEndpoints(message.groupId)) {
         if (id == endpointId) continue;
         try {
-          await nearby.sendPacket(id, {
+          await _sendPacket(id, {
             'type': 'message',
             'message': message.toMap(),
           });
@@ -521,10 +542,7 @@ class ChatSyncService extends ChangeNotifier {
     var sent = false;
     for (final id in _groupEndpoints(message.groupId)) {
       try {
-        await nearby.sendPacket(id, {
-          'type': 'message',
-          'message': message.toMap(),
-        });
+        await _sendPacket(id, {'type': 'message', 'message': message.toMap()});
         sent = true;
       } catch (_) {
         /* Keep pending for reconnection. */
@@ -534,7 +552,7 @@ class ChatSyncService extends ChangeNotifier {
   }
 
   Future<void> _sendGroup(String endpointId, Conversation group) =>
-      nearby.sendPacket(endpointId, {
+      _sendPacket(endpointId, {
         'type': 'group',
         'groupId': group.id,
         'name': group.name,

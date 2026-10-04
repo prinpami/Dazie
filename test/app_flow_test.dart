@@ -25,17 +25,16 @@ void main() {
     final services = await fixture(tester);
     await tester.pumpWidget(MainApp(services: services));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('GET STARTED'));
+    await tester.tap(find.text('Register'));
     await tester.pumpAndSettle();
     final fields = find.byType(TextFormField);
     await tester.enterText(fields.at(0), 'sampleuser');
-    await tester.enterText(fields.at(1), 'sample@example.com');
-    await tester.enterText(fields.at(2), 'password123');
-    await tester.enterText(fields.at(3), 'password123');
-    await tester.ensureVisible(find.text('REGISTER'));
-    await tester.tap(find.text('REGISTER'));
+    expect(fields, findsOneWidget);
+    expect(find.textContaining('Password'), findsNothing);
+    await tester.ensureVisible(find.text('Create account'));
+    await tester.tap(find.text('Create account'));
     await tester.pumpAndSettle();
-    expect(find.text('Your conversations will show up here.'), findsOneWidget);
+    expect(find.text('Start your first chat'), findsOneWidget);
     expect(
       (await services.profiles.getCurrentProfile())!.username,
       'sampleuser',
@@ -93,7 +92,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Hosting · waiting for members'), findsOneWidget);
+      expect(find.text('Waiting for friends'), findsOneWidget);
       expect(find.text('Open chat'), findsOneWidget);
       expect(find.text('Find a group'), findsNothing);
       await tester.tap(find.text('Stop hosting'));
@@ -162,16 +161,18 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Message options'));
+    expect(find.byTooltip('Message options'), findsNothing);
+    await tester.longPress(find.text('Delete this'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Delete'));
+    await tester.tap(find.text('Delete message on this device'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(await services.messages.getMessage(message.id), isNotNull);
-    await tester.tap(find.byTooltip('Message options'));
+    expect(find.byTooltip('Message options'), findsNothing);
+    await tester.longPress(find.text('Delete this'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Delete'));
+    await tester.tap(find.text('Delete message on this device'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete for me'));
     await tester.pumpAndSettle();

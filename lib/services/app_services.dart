@@ -48,6 +48,7 @@ class AppServices {
     final conversations = ConversationRepository(database.database);
     final messages = MessageRepository(database.database, conversations);
     final settings = SettingsRepository(database.database);
+    await settings.load();
     final nearby = nearbyService ?? createNearbyService();
     final chatSync = ChatSyncService(
       nearby: nearby,
@@ -71,6 +72,7 @@ class AppServices {
   Future<void> close() async {
     await chatSync.close();
     await nearby.stop();
+    settings.dispose();
     await database.close();
   }
 }

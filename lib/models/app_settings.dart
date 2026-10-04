@@ -1,12 +1,7 @@
-/*
- * This are the settings of the app. Right now, it only contains the following:
- *  1. Active Status    =     Online Status of User if they want to show
- *  2. Appearance       =     Selects the theme of the app (Dark, Light, or based on their System)
- */
-
 class AppSettings {
   const AppSettings({required this.activeStatus, required this.appearance});
 
+  // Retained for compatibility with saved settings; no presence feature uses it.
   final bool activeStatus;
   final String appearance;
 

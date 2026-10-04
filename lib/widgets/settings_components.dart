@@ -62,12 +62,14 @@ class SettingsSectionHeading extends StatelessWidget {
               ),
             ),
           ),
-          Image.asset(
-            'assets/images/DAZIE.png',
-            width: 40,
-            height: 12,
-            fit: BoxFit.contain,
-            semanticLabel: 'Dazie',
+          const Text(
+            'DAZIE',
+            style: TextStyle(
+              fontFamily: 'Fredoka',
+              color: DazieColors.tangerineOrange,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),

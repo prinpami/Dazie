@@ -28,7 +28,9 @@ class PeerConnectSheet extends StatelessWidget {
               width: 38,
               height: 4,
               decoration: BoxDecoration(
-                color: DazieColors.white.withValues(alpha: 0.45),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -45,17 +47,13 @@ class PeerConnectSheet extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               peerName,
-              style: const TextStyle(
-                color: DazieColors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             const Text(
               'Check the code with the other phone. Both codes should match.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: DazieColors.mutedText, fontSize: 13),
+              style: TextStyle(fontSize: 13),
             ),
             const SizedBox(height: 12),
             SelectableText(

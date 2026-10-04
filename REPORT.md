@@ -1,3 +1,21 @@
+# Current prototype polish — October 4, 2026
+
+This section describes current behavior. The dated notes below are historical; their references to authentication, sample data, preview appearance, and compass/location plans do not describe the current scope.
+
+- Replaced password and recovery forms with display-name-only local profile creation and explicit resumption of the one saved profile. Creation cannot overwrite an existing identity. Existing profiles and conversations remain intact.
+- Applied saved System/Light/Dark appearance throughout the app. Removed the fixed profile-page theme and Active Status control. Return to welcome explains retained data, shows shutdown progress, and supports retry after failure. Transport cleanup attempts advertising, discovery, and endpoint shutdown even if an earlier step fails.
+- Moved per-message options behind long press, right-click, keyboard activation, and a screen-reader action. Added distinct stream loading, empty, and retryable error states. Improved tap targets, scrollable forms/settings, light-theme contrast, and compact chat layouts.
+- Kept stored `queued`, `sent`, and `delivered` values. Labels now explain that transport acceptance or confirmation concerns at least one nearby device, possibly only the host, not every group member or a read receipt. Recipient-specific receipts remain deferred. Delivery updates cannot downgrade a confirmation when sends and receipts race.
+- Documented the host’s latest-50-message history window plus pending retries. This is not full-history sync.
+- Added a version-1 JSON envelope and packet validation before writes, preserving valid unversioned packets and sender/group checks. Invalid types, required fields, timestamps, JSON, and unsupported versions are ignored. No database migration is needed; existing profile, group, message, settings, and tombstone formats are retained.
+- Refreshed widget screenshots and removed the obsolete compass screenshot. README usage now matches real local conversations and current controls. The old two-phone photo remains explicitly historical.
+
+Validation: `flutter analyze`, `flutter test`, and `flutter test --dart-define=CAPTURE_UI=true test/screen_reference_test.dart`. Regression coverage includes profile preservation and async failures, app-wide and system theme changes, settings shutdown progress/failure/retry, message stream states, delivery semantics, malformed packets and spoofed senders, the 50-message window, and 320/390px layouts at 1×/2× text in both themes, including a narrow keyboard layout.
+
+No phone or emulator verification was performed for this polish. Android Nearby permission requirements are unchanged. Android 12L and earlier use Location permission for device discovery, not friend location tracking. Online/provider sign-in, a backend, location sharing, recipient-specific receipts, and full-history sync remain outside this prototype pass. Repeat group chat and reconnect tests on physical Android devices before release.
+
+---
+
 # Weekly Increment Report 
 
 ## Week of: September 27, 2026 
@@ -76,3 +94,20 @@ The initial screenshots captures did not load the fonts and images correctly, so
 - The September 27 report above records successful testing on two physical Android phones. No phone or emulator was attached during this October 3 compatibility pass, so Android Nearby advertising, discovery, acceptance, and transfer were not retested on hardware.
 - Repeat host/find, code acceptance and rejection, group/history sync, queued delivery after reconnect, and mobile-data-off checks across Android versions and vendors. API 32 and API 33+ permission behavior is covered in automated tests but still needs device checks.
 - Online authentication, provider sign-in, live compass/location, and iOS Nearby transport remain outside the current prototype.
+
+## Scope update: October 4, 2026
+
+- Removed the Google and Facebook sign-in placeholders from login and registration. Online provider authentication is deferred as a future feature.
+- Removed the compass/location preview and unused radar mockup. Friend radar and live location or direction sharing are deferred future features.
+- Kept nearby group discovery because it is connected to Android Nearby Connections and powers offline chat. On Android 12L and earlier, the OS requires Location permission for nearby scanning; Dazie does not use it to display or share GPS positions.
+- Updated the README and app description to match the current scope.
+
+### Account flow, Android minimum, and device check
+
+- Registration previously returned to the one saved profile: `RegisterScreen` routed to Login whenever `profiles/current` existed, and `ProfileRepository.createProfile` rejected a second profile. The repository now keeps profiles by ID, preserves legacy `profiles/current` data, and stores the selected account separately.
+- Startup resumes an active account directly to its chat list. Login selects a saved on-device account, Register can add another, chats are filtered by account membership, and Settings has a short **Log out** action that stops Nearby before clearing the active account.
+- Replaced the wordmark PNG with Fredoka text in the entry and home headers. Simplified Settings and redesigned Nearby around Bluetooth/Wi-Fi symbols and clear Find/Host actions.
+- The APK minimum is API 24 (Android 7.0). The connected Xiaomi Redmi M2010J19SG runs Android 11/API 30, so it is compatible; Android 6/API 23 and older cannot install this Flutter build. Nearby chat additionally depends on Google Play services and runtime permissions.
+- `flutter analyze` completed cleanly, and the Android integration flow passed on the Redmi for register, login, logout, per-account chats, and Nearby UI. ADB input injection is blocked by MIUI, so interactions were driven through Flutter's integration runner. Nearby radio discovery and two-phone transfer were not exercised in this pass.
+- Earlier notes identify the recurring `framework.dart` assertion as duplicate navigation while a Nearby connection-request sheet was closing. `main.dart` now schedules one normal route pop after the request is removed; no framework assertion appeared in the on-device integration run.
+- Caution from that device run: Flutter's integration runner replaced the installed app and cleared its local Sembast data. The former account/chat list was gone after reinstall, and Android reported no restore set. Keep integration runs on a dedicated test phone or emulator; local app data should be backed up first.

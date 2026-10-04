@@ -121,13 +121,13 @@ class MessageRepository {
   }
 
   Future<void> updateDeliveryStatus(String messageId, String status) async {
-    final message = await _messages.record(messageId).get(_database);
-    if (message == null) return;
-    if (message['deliveryStatus'] == 'delivered' && status != 'delivered') {
-      return;
-    }
-    await _messages.record(messageId).update(_database, {
-      'deliveryStatus': status,
+    await _database.transaction((txn) async {
+      final message = await _messages.record(messageId).get(txn);
+      if (message == null) return;
+      if (message['deliveryStatus'] == 'delivered' && status != 'delivered') {
+        return;
+      }
+      await _messages.record(messageId).update(txn, {'deliveryStatus': status});
     });
   }
 
