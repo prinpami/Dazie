@@ -1,5 +1,3 @@
-[![Made with AI](https://img.shields.io/badge/Made_with-AI_assistance-blue)](AI-USAGE.md)
-
 # Dazie
 
 Dazie is my Flutter project, created and maintained by Prince Pamintuan ([@prinpami](https://github.com/prinpami)). It is an offline-first group communication app for friends, families, classmates, and small groups who need to coordinate when mobile internet is unreliable.
