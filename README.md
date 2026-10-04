@@ -2,11 +2,11 @@
 
 # Dazie
 
-Dazie is my Flutter project, created and maintained by Prios ([@prinpami](https://github.com/prinpami)). It is an offline-first group communication app for friends, families, classmates, and small groups who need to coordinate when mobile internet is unreliable.
+Dazie is my Flutter project, created and maintained by Prince Pamintuan ([@prinpami](https://github.com/prinpami)). It is an offline-first group communication app for friends, families, classmates, and small groups who need to coordinate when mobile internet is unreliable.
 
 ## Repository
 
-- **Project author:** Prios ([@prinpami](https://github.com/prinpami))
+- **Project author:** Prince Pamintuan ([@prinpami](https://github.com/prinpami))
 
 ## My project repository
 
